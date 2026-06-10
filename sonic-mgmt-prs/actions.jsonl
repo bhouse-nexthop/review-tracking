@@ -59,3 +59,12 @@
 {"pr": 25094, "action": "deep_review", "date": "2026-06-10", "detail": "review-findings-2026-06-10.md"}
 {"pr": 25123, "action": "deep_review", "date": "2026-06-10", "detail": "review-findings-2026-06-10.md"}
 {"pr": 25134, "action": "deep_review", "date": "2026-06-10", "detail": "review-findings-2026-06-10.md"}
+{"pr": 24403, "action": "ci_fail_notify", "date": "2026-06-10", "detail": "https://github.com/sonic-net/sonic-mgmt/pull/24403#issuecomment-4670349906", "ts": "2026-06-10T12:48:09Z"}
+{"pr": 24357, "action": "ci_fail_notify", "date": "2026-06-10", "detail": "https://github.com/sonic-net/sonic-mgmt/pull/24357#issuecomment-4670350105", "ts": "2026-06-10T12:48:09Z"}
+{"pr": 21144, "action": "ci_fail_notify", "date": "2026-06-10", "detail": "https://github.com/sonic-net/sonic-mgmt/pull/21144#issuecomment-4670350318", "ts": "2026-06-10T12:48:09Z"}
+{"pr": 24247, "action": "deep_review", "date": "2026-06-10", "detail": "review-findings-2026-06-10.md (follow-up batch)", "ts": "2026-06-10T12:50:38Z"}
+{"pr": 23346, "action": "deep_review", "date": "2026-06-10", "detail": "review-findings-2026-06-10.md (follow-up batch)", "ts": "2026-06-10T12:50:38Z"}
+{"pr": 21660, "action": "deep_review", "date": "2026-06-10", "detail": "review-findings-2026-06-10.md (follow-up batch)", "ts": "2026-06-10T12:50:38Z"}
+{"pr": 21658, "action": "deep_review", "date": "2026-06-10", "detail": "review-findings-2026-06-10.md (follow-up batch)", "ts": "2026-06-10T12:50:38Z"}
+{"pr": 19020, "action": "deep_review", "date": "2026-06-10", "detail": "review-findings-2026-06-10.md (follow-up batch)", "ts": "2026-06-10T12:50:38Z"}
+{"pr": 18701, "action": "deep_review", "date": "2026-06-10", "detail": "review-findings-2026-06-10.md (follow-up batch)", "ts": "2026-06-10T12:50:38Z"}

@@ -315,3 +315,108 @@ an `issue_close` ledger entry. #24902's issue will close itself.
 - **Duplication likelihood:** none seen.
 - **Reviewer notes:** Links `Fixes sonic-net/sonic-buildimage#25768` but verification is a single local pass on `vlab-vpp-01` — re-enabling a previously-skipped test risks re-introducing flakiness in gating if it isn't stable across runs.
 - **Suggested recommendation:** Approve — low-risk re-enable of skipped coverage; watch for gating flakiness after merge
+
+---
+
+## Follow-up batch — newly eligible after the morning `/azp run`
+
+These 6 PRs were **stale** at the start of the sweep; our `/azp run` produced
+fresh **passing** runs, making them eligible for deep review (Rule 4). Reviewed
+later the same day.
+
+| PR | Type | Cmplx | Matches? | Approvals | Conflict | Dup | Linked issue | Suggested rec |
+|----|------|-------|----------|-----------|----------|-----|--------------|---------------|
+| [#24247](https://github.com/sonic-net/sonic-mgmt/pull/24247) | New test suite | Med | Yes | none | Low | none | none | **Request changes** |
+| [#23346](https://github.com/sonic-net/sonic-mgmt/pull/23346) | Test plan/doc | Low | **Partial** | none (dismissed) | Low | none | refs PRs only | Approve (minor nit) |
+| [#21660](https://github.com/sonic-net/sonic-mgmt/pull/21660) | New test suite | Low-Med | Yes | none (r12f commented) | Low | none (sibling #21658) | none | **Get another opinion** |
+| [#21658](https://github.com/sonic-net/sonic-mgmt/pull/21658) | New test suite | Low-Med | Yes | none (r12f commented) | Low | none (sibling #21660) | none | **Get another opinion** |
+| [#19020](https://github.com/sonic-net/sonic-mgmt/pull/19020) | Test plan/doc | Low | **Partial** | none (dismissed) | Low | none | refs PR only | **Get another opinion** |
+| [#18701](https://github.com/sonic-net/sonic-mgmt/pull/18701) | Backport (bug fix) | Low | Yes | none (dismissed) | Low | none (backport of #17641) | none | Approve |
+
+**Notes:** #21658/#21660 are a confirmed Keysight BGP-convergence **series** (sibling
+cases sharing a merged `helper.py`), not duplicates — r12f asked to factor the
+common test skeleton across cases (deferred by author). #24247 is also Keysight
+(Snappi/Ixia) — defer on the Ixia-private-API usage, but the `global test_results`
+DataFrame (xdist contamination) and a possible double traffic-start are real and
+unresolved. None of the 6 links a closeable issue (all `Fixes #` placeholders are
+blank; referenced numbers are PRs).
+
+---
+
+### [PR #24247](https://github.com/sonic-net/sonic-mgmt/pull/24247) — [SNAPPI][AI] Finding the minimum frame size with no packet loss
+- **Author / affiliation:** vikumarks (Vinod Kumar) / Keysight Technologies (Snappi/Ixia TG vendor)
+- **Type:** New test suite — new `tests/snappi_tests/dataplane/test_min_frame_size.py` + additive `boundary_check` helper in `dataplane/files/helper.py`
+- **Complexity:** Medium — 2 files, +242/-0; one net-new, one additive helper (shared by the dataplane snappi suite). Runs only on `topology("nut")` with an Ixia/IxNetwork backend.
+- **Description summary:** Binary-searches 64-byte-aligned frame sizes (64..9100) at 100% line rate to find the smallest size with zero loss, for IPv4/IPv6 and RFC2889 on/off; sanity-checks the max frame first, then leftmost-True binary search, recording to a DataFrame + GaugeMetric.
+- **Existing reviews/comments:** banidoru (AI reviewer, 3 iterations) — early CHANGES_REQUESTED, latest COMMENTED ("most concerns addressed, ~5 minor open"). yxieca non-blocking AI note. No human approval (REVIEW_REQUIRED, mergeStateStatus BLOCKED).
+- **Matches description?:** Yes — implements the binary-search min-frame flow. (Body summary line says "maximum traffic rate" but the implementation/title target minimum frame size.)
+- **Conflict likelihood:** Low — new file isolated; helper.py change is a single appended function.
+- **Duplication likelihood:** none seen.
+- **Linked issue(s):** none — `Fixes #` placeholder blank.
+- **Reviewer notes:** Two real, still-open items in head: (1) module-level `global test_results` DataFrame mutated across parametrized runs → xdist/parallel contamination risk; (2) possible double traffic start (`start_stop(start,…)` then `boundary_check` calls `StartStatelessTrafficBlocking()` with no intervening stop). Uses private RestPy (`snappi_api._ixnetwork`) — Ixia-only by design (defer to Keysight), but breaks the vendor-neutral SNAPPI abstraction.
+- **Suggested recommendation:** Request changes — core logic sound and AI feedback mostly addressed, but fix the `global` xdist hazard and the double-start before merge; still needs a human approval.
+
+### [PR #23346](https://github.com/sonic-net/sonic-mgmt/pull/23346) — SONiC BMC Redfish API and D-Bus test plan
+- **Author / affiliation:** chinmoy-nexthop (Chinmoy Dey) / NextHop (profile empty; resolved from `-nexthop` suffix)
+- **Type:** Test plan / design doc (no test code)
+- **Complexity:** Low — 1 file, +791/-0, `docs/testplan/redfish/…md`; docs-only, zero blast radius.
+- **Description summary:** Plans validation of the SONiC BMC Redfish API (bmcweb + sonic-dbus-bridge) on Aspeed AST2720/AST2700: service-root/chassis/system/firmware inventory, ComputerSystem.Reset, Rack Manager alert/telemetry/event subscription, D-Bus health, graceful degradation, mTLS auth, cross-validated against Redis/busctl/CLI.
+- **Existing reviews/comments:** StormLiangMS (DISMISSED) "LGTM, comprehensive"; judyjoseph + shreyansh-nexthop COMMENTED (empty); yxieca AI docs-only note; `/azp run` excluded (docs path not CI-gated).
+- **Matches description?:** Partial — doc is solid, but body says "29 test cases / 11 sections" while the content has **34 cases / 12 sections** (mTLS section + TC#30–34 added); headline count stale.
+- **Conflict likelihood:** Low — brand-new file, isolated.
+- **Duplication likelihood:** none seen — first Redfish/BMC test plan in the repo.
+- **Linked issue(s):** none closeable — `Fixes #` blank; referenced sonic-net/SONiC#2043, sonic-redfish#1/#2 are all **PRs** (track-only). Dependent HLDs reportedly not yet merged upstream — confirm before acting.
+- **Reviewer notes:** Defer to NextHop on BMC/Aspeed/D-Bus endpoint facts. Reconcile the 29→34 / 11→12 count; the documented `tests/redfish/` tree is a future follow-up.
+- **Suggested recommendation:** Approve (minor nit) — docs-only, isolated, sound; fix the count mismatch and confirm dependent-HLD status. (Repo convention: maintainers don't formally approve docs-only PRs.)
+
+### [PR #21660](https://github.com/sonic-net/sonic-mgmt/pull/21660) — [AI - Snappi] BGP convergence testcase for Device Unisolation (Case 3)
+- **Author / affiliation:** selldinesh (Dinesh Kumar Sellappan) / Keysight Technologies
+- **Type:** New test suite (Snappi dataplane BGP-convergence case)
+- **Complexity:** Low–Medium — single new file `test_bgp_device_unisolation.py`, +221/-0; relies on the already-merged shared `helper.py` (#21204).
+- **Description summary:** Snappi BGP dataplane-convergence test over three "device unisolation" recovery events (`config_reload`, `all_ports_startup`, `bgp_container_restart`), parametrized by IP version / frame rate / frame size; reports convergence time as a Gauge metric.
+- **Existing reviews/comments:** r12f (Microsoft) — multiple inline comments (no approve): reuse one skeleton across cases 1/2/3, drop an unneeded param, select the t1 device from topo/tbinfo not a hostname substring; author marked some fixed, deferred skeleton reuse. advanced-security flagged unused imports. yxieca DISMISSED ×2.
+- **Matches description?:** Yes — implements the three events. Minor: docstring/body is stale copy-paste from Case 1 ("fec errors").
+- **Conflict likelihood:** Low — single new file.
+- **Duplication likelihood:** none — confirmed **sibling** of #21658 (different file, shared helper), not a dup; r12f's skeleton-dedup request is the legit overlap, deferred.
+- **Linked issue(s):** none — `Fixes #` blank; #21204 (dep, merged) and #21658 (sibling) are PRs.
+- **Reviewer notes:** Fix stale docstring; verify the `configure_acl_for_route_withdrawl` unused import was actually removed; t1 selection still uses `'t1' in hostname` substring (fragile). Defer to Keysight on harness style; skeleton dedup is the only real maintainability lever.
+- **Suggested recommendation:** Get another opinion — sound and isolated, but should land with r12f's sign-off given the deferred skeleton dedup + stale docstring + lingering unused import.
+
+### [PR #21658](https://github.com/sonic-net/sonic-mgmt/pull/21658) — [AI - Snappi] BGP convergence testcase for single session flap Down (Case 1)
+- **Author / affiliation:** selldinesh (Dinesh Kumar Sellappan) / Keysight Technologies
+- **Type:** New test suite (Snappi dataplane BGP convergence test)
+- **Complexity:** Low–Medium — single new file `test_bgp_single_port_down.py`, +272/-0; shared logic in the merged `helper.py`.
+- **Description summary:** Measures BGP convergence (packet-loss duration) for a single-session flap over two `event_type`s (`t0_port_shutdown`, `route_withdrawal`) across frame sizes 64–8192 (IPv6); records a convergence-time gauge.
+- **Existing reviews/comments:** r12f (Microsoft) — 5 actionable inline comments (rename event types to HLD, lift common code, rename `subnet_type`→`ip_version`, add scale/prefix params, adjust frame sizes); author replied "fixed" to 4; r12f "Still waiting for updates." yxieca DISMISSED.
+- **Matches description?:** Yes — Case 1 single-session flap as described.
+- **Conflict likelihood:** Low — brand-new file.
+- **Duplication likelihood:** none — confirmed **sibling** of #21660 (clean series), not a dup.
+- **Linked issue(s):** none — `Fixes #` blank; dependency #21565 already merged.
+- **Reviewer notes:** r12f's dedup-refactor of the two event branches is still largely unmet (substantial duplicated setup/teardown); test only parametrizes IPv6 (IPv4 ranges are dead config); hardcoded `/home/admin/ai_acl.json` + `chmod 666`. Defer to Keysight on the TG harness.
+- **Suggested recommendation:** Get another opinion — defer to r12f/Keysight; confirm the requested dedup-refactor + HLD event naming actually landed ("Still waiting for updates") before approval.
+
+### [PR #19020](https://github.com/sonic-net/sonic-mgmt/pull/19020) — [Test gap] Test plan to verify vxlan tunnel name length
+- **Author / affiliation:** wsycqyz (ShiyanWangMS) / Microsoft *(low confidence — profile empty, no `-ms` suffix; inferred from display name)*
+- **Type:** Test plan / design doc (no test code)
+- **Complexity:** Low — 1 file, +84/-0, `docs/testplan/Vxlan-tunnel-name-length-test-plan.md`.
+- **Description summary:** Plans verification that VXLAN tunnel interface names longer than the historical 15-char limit can be created/listed/deleted; backs sonic-buildimage #20108 (YANG name-length validation). Two cases: create a long-named tunnel via `config load`, delete via redis-cli, confirm via `show vxlan tunnel`.
+- **Existing reviews/comments:** yxieca (Microsoft) AI note "no issues found" but **DISMISSED** (not an approval); `/azp run` excluded (docs path).
+- **Matches description?:** Partial — PR body template is essentially empty; the doc delivers a thin but coherent plan.
+- **Conflict likelihood:** Low — brand-new file.
+- **Duplication likelihood:** none seen.
+- **Linked issue(s):** sonic-buildimage#20108 is a **PR** (cross-repo, closed) — track-only; `Fixes #` blank.
+- **Reviewer notes:** Under-delivers vs its own objectives — TC1 lists 16/32/63-char objectives but exercises only one ~30-char name (no boundary cases); TC2 deletes via raw `redis-cli del` (bypasses config tooling); markdown code-fence glitch; empty PR template. Defer to Microsoft on intent.
+- **Suggested recommendation:** Get another opinion — doc-only/low-risk, but a Microsoft maintainer should decide whether a plan with no test code and untested boundaries clears the "[Test gap]" bar; currently has no valid approval.
+
+### [PR #18701](https://github.com/sonic-net/sonic-mgmt/pull/18701) — Fix missing PSU fans in test_psu_fan.py port to 202411
+- **Author / affiliation:** eyakubch / **unknown** (empty profile company, no org suffix)
+- **Type:** Backport (bug fix) — clean 202411 backport of merged master PR #17641
+- **Complexity:** Low — 3 files, +48/-17, all under `tests/platform_tests/api/`.
+- **Description summary:** Fixes `test_psu_fans.py` failures on devices with absent/skipped PSUs by extracting `skip_absent_psu` to a module-level `conftest.py` function and wiring it into `TestPsuFans` (mirroring `test_psu.py`); populates `self.psu_skip_list` in setup.
+- **Existing reviews/comments:** yxieca (Microsoft) AI note "no issues found" but **DISMISSED**; BuildBot added 202311/202405/202505 backport labels.
+- **Matches description?:** Yes — exactly the helper extraction + skip-guard insertion, consistent with `test_psu.py`.
+- **Conflict likelihood:** Low — targets release branch `202411`, isolated to PSU API tests; sibling backports go to other branches.
+- **Duplication likelihood:** none — legitimate backport of #17641, not a dup.
+- **Linked issue(s):** none closeable — references master PR #17641 (a PR); `Fixes #` blank.
+- **Reviewer notes:** Faithful to master; minor PEP8 nit (blank lines before the new module-level function) and conftest-as-importable-module pattern (matches master). PSU hardware isn't author-specific.
+- **Suggested recommendation:** Approve — low-risk faithful backport of an already-merged fix, isolated to a release branch.
