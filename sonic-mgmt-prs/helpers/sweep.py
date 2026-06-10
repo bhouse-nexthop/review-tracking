@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """
-Review-queue sweep tool (see ../../POLICY.md).
+Review-queue sweep tool (see ../../POLICY.md). Maintains the JSON system of record
+(actions.jsonl); it does not write a human .md — the single human doc is
+review-findings.md, regenerated separately (only PRs awaiting our action).
 
 Fetches all open PRs where REVIEWER is a requested reviewer on REPO, classifies
 each PR, and applies the ledger-gated rules:
@@ -17,7 +19,7 @@ is intentionally NOT automated here -- the tool only flags eligible PRs; the
 review itself is driven separately (subagents) and recorded via --record-review.
 
 Usage:
-  ./sweep.py                       # dry-run plan + regenerate review-queue.md
+  ./sweep.py                       # dry-run: print the plan (no writes)
   ./sweep.py --apply               # post comments for rules 1,2,3,5; update ledger
   ./sweep.py --record-review 25012 # append a deep_review ledger entry for a PR
 
@@ -30,7 +32,6 @@ REVIEWER = os.environ.get("REVIEW_REVIEWER", "bhouse-nexthop")
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)                       # the per-repo dir (sonic-mgmt-prs)
 LEDGER = os.path.join(ROOT, "actions.jsonl")
-QUEUE_MD = os.path.join(ROOT, "review-queue.md")
 
 STALE_DAYS = 14
 ESCALATE_DAYS = 14
@@ -382,7 +383,7 @@ def fetch_prs():
     for n in nums:
         d = gh_json(["pr", "view", str(n), "--repo", REPO, "--json",
                      "number,title,author,mergeable,statusCheckRollup,reviews,"
-                     "headRefOid,isDraft,body,baseRefName"])
+                     "headRefOid,isDraft,body,baseRefName,updatedAt"])
         detail.append(d)
     return detail
 
@@ -788,13 +789,95 @@ def close_issues_for_merged_pr(pr, apply):
             sys.stderr.write(out.stderr)
 
 
+TICKLER_DAYS = 14
+HANDOFF = {"conflict_ping", "azp_run", "ci_fail_notify", "changes_requested",
+           "evidence_request", "opinion_request", "escalate", "tickler"}
+TICKLE = {"conflict_ping", "ci_fail_notify", "changes_requested",
+          "evidence_request", "opinion_request"}   # asks we re-ping (not azp/escalate/tickler)
+
+TICKLER_MSG = {
+    "conflict_ping": "Following up — this PR still has merge conflicts. Could you rebase and resolve them so we can review? Thanks!",
+    "ci_fail_notify": "Following up — CI is still failing here. Could you take a look at the latest run? Happy to proceed once it's green.",
+    "changes_requested": "Following up on the requested changes — any update? Glad to re-review once they're addressed.",
+    "evidence_request": "Following up — could you share evidence of a passing run on real hardware (this isn't covered by the VS CI)? Then we can proceed.",
+    "opinion_request": "Friendly ping — when you have a moment, your review here would help us move this PR forward. Thanks!",
+}
+
+
+def we_approved(d):
+    """True if our reviewer's latest review on the PR is APPROVED."""
+    latest = None
+    for rv in (d.get("reviews") or []):
+        if (rv.get("author") or {}).get("login") == REVIEWER:
+            latest = rv.get("state")
+    return latest == "APPROVED"
+
+
+def latest_action(pr, ledger):
+    acts = [e for e in ledger if e["pr"] == pr]
+    return max(acts, key=entry_ts) if acts else None
+
+
+def responded_since(d, ts):
+    """Any PR activity (commit/comment/review/label) after ts — proxy via updatedAt."""
+    upd = d.get("updatedAt", "") or ""
+    return bool(upd) and upd > ts
+
+
+def needs_our_action(d, ledger):
+    """Findings-inclusion (§10): a PR belongs in review-findings.md iff we've
+    deep-reviewed it, haven't approved it, and either we haven't acted since the
+    review OR the author/reviewer has responded since our hand-off."""
+    pr = d["number"]
+    if we_approved(d):
+        return False
+    if not any(e["pr"] == pr and e["action"] == "deep_review" for e in ledger):
+        return False                                    # not yet reviewed -> not in findings
+    last = latest_action(pr, ledger)
+    if last is None or last["action"] == "deep_review":
+        return True                                     # reviewed, pending our decision
+    if last["action"] in HANDOFF:
+        return responded_since(d, entry_ts(last))       # back to us only if they responded
+    return False
+
+
+def tickler_pass(detail, ledger, apply):
+    """Send a 2-week reminder on hand-offs still waiting (no response since), so
+    requests to authors / recruited reviewers don't stall silently. Re-fires every
+    TICKLER_DAYS until they respond. Measures the clock from the latest of the
+    original ask and any prior tickler (so our own reminders don't count as a reply)."""
+    today_d = datetime.date.today()
+    for d in detail:
+        pr = d["number"]
+        acts = [e for e in ledger if e["pr"] == pr]
+        asks = [e for e in acts if e["action"] in TICKLE]
+        if not asks:
+            continue
+        ask = max(asks, key=entry_ts)
+        ticks = [e for e in acts if e["action"] == "tickler"]
+        last_touch = max([entry_ts(ask)] + [entry_ts(t) for t in ticks])
+        if responded_since(d, last_touch):
+            continue                                    # author/reviewer responded -> re-evaluate, no tickle
+        age = (today_d - datetime.date.fromisoformat(last_touch[:10])).days
+        if age < TICKLER_DAYS:
+            continue
+        body = TICKLER_MSG[ask["action"]]
+        if not apply:
+            print(f"  WOULD tickler #{pr} (re {ask['action']}, {age}d waiting): {body[:50]}")
+            continue
+        url = post_comment(pr, body)
+        if url:
+            append_ledger({"pr": pr, "action": "tickler", "date": today(),
+                           "detail": f"re:{ask['action']} {url}"})
+            print(f"  DID  tickler #{pr} (re {ask['action']}, {age}d): {url}")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--apply", action="store_true", help="post comments + update ledger")
     ap.add_argument("--record-review", type=int, metavar="PR",
                     help="append a deep_review ledger entry for PR (after a review is done)")
     ap.add_argument("--review-detail", default="", help="detail string for --record-review")
-    ap.add_argument("--no-render", action="store_true", help="skip writing review-queue.md")
     ap.add_argument("--issues", action="store_true",
                     help="report issue linkage + manual-close-on-merge candidates (uses API)")
     ap.add_argument("--close-issues", type=int, metavar="PR",
@@ -807,7 +890,17 @@ def main():
                     help="list candidate non-NextHop reviewers for a NextHop PR (Rule 8 cross-company gate)")
     ap.add_argument("--trust", metavar="LOGIN",
                     help="compute an author's trust level (merge history + top-20 company)")
+    ap.add_argument("--findings-list", action="store_true",
+                    help="list PRs that currently belong in review-findings.md (awaiting our action)")
     args = ap.parse_args()
+
+    if args.findings_list:
+        ledger = load_ledger()
+        detail = fetch_prs()
+        inc = [d["number"] for d in detail if needs_our_action(d, ledger)]
+        print("PRs to include in review-findings.md (awaiting our action):")
+        print(sorted(inc))
+        return
 
     if args.trust:
         level, d = author_trust(args.trust)
@@ -857,56 +950,22 @@ def main():
     # the author gets a chance to fix it before the PR is ready to merge.
     print("\ncommit-message hygiene (Rule 9):")
     commit_hygiene_sweep(detail, ledger, args.apply)
+
+    # Tickler: 2-week reminders on hand-offs still waiting (no response since).
+    print("\ntickler reminders (2-week, still-waiting hand-offs):")
+    tickler_pass(detail, ledger, args.apply)
+
+    # Re-evaluation: PRs with new activity since our hand-off are back in our court.
+    reeval = [d["number"] for d in detail
+              if (la := latest_action(d["number"], ledger)) and la["action"] in HANDOFF
+              and responded_since(d, entry_ts(la))]
+    if reeval:
+        print(f"\nre-evaluate (author/reviewer responded since our action): {sorted(reeval)}")
     if not args.apply:
-        print("  (dry-run — pass --apply to post commit-message notices)")
+        print("\n(dry-run — pass --apply to post comments/ticklers)")
 
-    if not args.no_render:
-        render_table(detail, plan, ledger)
-        print(f"\nwrote {QUEUE_MD}")
-
-
-def render_table(detail, plan, ledger):
-    pmap = {r["pr"]: r for r in plan}
-    rows = sorted(detail, key=lambda d: -d["number"])
-    out = [f"# {REPO} — PRs awaiting review (`{REVIEWER}`)\n",
-           f"_Generated {today()}. See ../POLICY.md for the rules._\n",
-           "| PR | Title | Author | CI | Last CI | Merge | Reviews | Linked issues | Next action | Last logged action |",
-           "|----|-------|--------|----|---------|-------|---------|---------------|-------------|--------------------|"]
-    for d in rows:
-        pr = d["number"]
-        r = pmap[pr]
-        title = d["title"].replace("|", "\\|")
-        if len(title) > 55:
-            title = title[:52] + "..."
-        merge = {"CONFLICTING": "⚠️ conflict", "MERGEABLE": "✅ clean"}.get(d.get("mergeable"), "—")
-        # linked issues (regex only; ⚑ = closing keyword present). Resolve
-        # issue-vs-PR + manual-close disposition with `sweep.py --issues`.
-        refs = extract_issue_refs(d.get("body"), d.get("title"))
-        if refs:
-            li = ", ".join((f"{rp}#{nm}".replace(REPO + "#", "#")) + ("⚑" if kw else "")
-                           for (rp, nm), kw in sorted(refs.items()))
-        else:
-            li = "—"
-        # latest review state per author
-        latest = {}
-        for rv in (d.get("reviews") or []):
-            who = (rv.get("author") or {}).get("login")
-            if who:
-                latest[who] = rv.get("state")
-        appr = [w for w, s in latest.items() if s == "APPROVED"]
-        chg = [w for w, s in latest.items() if s == "CHANGES_REQUESTED"]
-        rev = ", ".join(f"✓{w}" for w in appr) + (" " if appr and chg else "") + \
-              ", ".join(f"✗{w}" for w in chg)
-        rev = rev or "—"
-        acts = [e for e in ledger if e["pr"] == pr]
-        last_act = max(acts, key=lambda e: e["date"]) if acts else None
-        la = f'{last_act["action"]} {last_act["date"]}' if last_act else "—"
-        nxt = r["action"] if r["action"] not in ("none", None) else "—"
-        out.append(f"| [#{pr}](https://github.com/{REPO}/pull/{pr}) | {title} | "
-                   f"{(d.get('author') or {}).get('login','?')} | {r['ci']} | "
-                   f"{r['last_ci'] or '—'} | {merge} | {rev} | {li} | {nxt} | {la} |")
-    with open(QUEUE_MD, "w") as f:
-        f.write("\n".join(out) + "\n")
+    print("\nThe full per-PR state is in actions.jsonl (system of record). The human "
+          "doc is review-findings.md (regenerated separately — only PRs awaiting our action).")
 
 
 if __name__ == "__main__":

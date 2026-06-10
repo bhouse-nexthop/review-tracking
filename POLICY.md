@@ -50,7 +50,12 @@ Every action is appended to `<repo>/actions.jsonl`, one JSON object per line:
 ```
 
 Action types: `conflict_ping`, `azp_run`, `ci_fail_notify`, `deep_review`,
-`escalate`, `issue_close`, `misleading_flag`, `commit_msg_notice`, `merge`.
+`escalate`, `issue_close`, `misleading_flag`, `commit_msg_notice`, `merge`,
+`changes_requested`, `evidence_request`, `opinion_request`. (Approval is recorded
+on GitHub, not the ledger.) The "handed-off" subset — `changes_requested`,
+`evidence_request`, `opinion_request`, `conflict_ping`, `azp_run`, `ci_fail_notify`,
+`escalate`, `merge` — removes a PR from `review-findings.md` until the author
+responds (§10).
 
 **What gets logged — the principle:** log an action **only if its triggering
 condition persists after we act**, so the ledger can stop us repeating it.
@@ -101,9 +106,10 @@ repeated pings and repeated `/azp run`. Concretely:
    post the one-time policy notice to any with weak/missing-signoff messages, so
    the author can fix it before the PR is merge-ready. Not gated on CI/merge
    state; idempotent via `commit_msg_notice`.
-5. **Regenerate** the tracking table and findings (`gen_table.py`).
+5. **Regenerate** `review-findings.md` (minimal — only PRs awaiting our action,
+   per the §10 inclusion rule), sorted by recommendation with anchor links.
 6. **Report** to the human: new actions taken, escalations, and the current
-   eligible-for-review set.
+   awaiting-our-action set.
 
 ### Decision order per PR
 
@@ -365,6 +371,10 @@ approval — see preconditions), applying these rules.
   Keep it brief. This is what makes an approval auditable and stops a misleading
   green check from being mistaken for validation. (The summary lives on the PR;
   GitHub records the approval — no ledger entry needed.)
+- **Remove from tracking once approved.** As soon as we approve a PR, it **drops
+  out of `review-findings.md`** (the single human doc) — see §10. We don't keep
+  stale "approved"/"merged" rows; the approval summary comment, GitHub's record, and
+  git history preserve anything we'd ever need.
 - **On merge:** run the close-on-merge step (Rule 6) for linked issues and
   record a `merge` ledger entry (detail = method + resulting commit/PR).
 - **Tooling:** `sweep.py --merge <PR>` is dry-run by default (prints method +
@@ -503,12 +513,39 @@ only renders if the repo uses the Azure Pipelines GitHub App — if a comment ha
 no effect, the commenter may lack trigger rights.
 
 ## 10. Artifacts & helpers (per tracked repo)
-- `review-queue.md` — generated tracking table (status + follow-up column).
-- `review-findings-<date>.md` — deep-review briefs for that sweep.
-- `actions.jsonl` — the append-only action ledger (§3).
-- `helpers/` — the sweep scripts and table generator.
-- `data/` — raw JSON/TSV snapshots from the last sweep (for reproducibility;
-  may be gitignored if noisy).
+**Two layers: one human doc, one machine record.**
+- **`review-findings.md`** — the **single human-facing doc** (undated; regenerated
+  on a recurring basis). It is a **tight, minimal list of PRs awaiting *our*
+  action**, sorted by recommendation, each linking to its full brief (anchor
+  links). **A PR appears here only while it needs a decision/action from us.** It
+  is **removed entirely** the moment it is either:
+  - **complete** — we approved it (or it merged/closed); or
+  - **handed off** — the ball is with someone else: we requested changes / more
+    info / hardware evidence, asked for another opinion, it's conflicting (pinged),
+    CI is re-running (azp), we notified a CI failure, or it's COI-waiting on a
+    cross-company reviewer.
+
+  No "approved"/"done"/"waiting"/historic rows linger — keep it scannable. The
+  detail and history of removed items live in the JSON + git history.
+- **`actions.jsonl`** — the **machine system of record** (append-only ledger, §3).
+  Holds every action + timestamp, the awaiting-other state, and (on re-sweep) when
+  the author responds — which is what brings a PR *back* into `review-findings.md`.
+  This, not a markdown table, is the complete per-PR state.
+- **`helpers/`** — the sweep tool (maintains the ledger; posts rule comments) and
+  the review prompt. The sweep does **not** emit a human table.
+- **`data/`** — the affiliation/score maps + raw snapshots (`author_org_map.csv`,
+  `sii_org_predict.csv`, `org_normalization.json`, last-sweep JSON).
+- There is intentionally **no `review-queue.md`** — full status is the JSON's job;
+  the human reads `review-findings.md`.
+
+### Findings-inclusion rule (what stays in review-findings.md)
+Regeneration includes a PR **iff** it currently needs our action — i.e. it has a
+`deep_review` (or is review-eligible) and its latest ledger action is **not** one of
+the "handed-off" types (`approve`*/`merge`, `changes_requested`, `evidence_request`,
+`opinion_request`, `conflict_ping`, `azp_run`, `ci_fail_notify`, `escalate`), and we
+have not approved it. When the author responds (PR updated after our hand-off
+action), it re-enters on the next regeneration. (*approval is detected from our
+GitHub review, not a ledger row.)
 
 ## 11. Change log
 - **2026-06-10** — initial policy. Rules 1–4 established during the first
@@ -530,4 +567,7 @@ no effect, the commenter may lack trigger rights.
   Rule 5 re-notify cooldown. Added the SII author→org map as affiliation source #1
   (§8), and the **author-trust metric** (§8.1: 5 levels Expert/High/Medium/Low/
   Unproven; primary = merged-PR history, secondary = major-company (score>1500) bump
-  capped at High; Expert is individual-only).
+  capped at High; Expert is individual-only). **Consolidated to a single human doc:**
+  `review-findings.md` (undated, minimal — only PRs awaiting our action; removed when
+  complete or handed-off) backed by `actions.jsonl`; `review-queue.md` removed.
+  Affiliation now also uses email-domain resolution + org-name canonicalization/dedup.

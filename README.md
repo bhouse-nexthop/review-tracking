@@ -16,9 +16,14 @@ CI, surface failures to authors, deep-review the PRs that are actually ready)
 
 ```bash
 cd sonic-mgmt-prs
-python3 helpers/sweep.py            # dry-run: print the plan, regenerate review-queue.md
+python3 helpers/sweep.py            # dry-run: print the plan (no writes)
 python3 helpers/sweep.py --apply    # post comments (rules 1/2/3/5) + update actions.jsonl
 ```
+
+**Files:** `review-findings.md` is the single human doc — a minimal, recommendation-sorted
+list of PRs **awaiting our action** (a PR drops off once it's approved/merged or handed back
+to the author). `actions.jsonl` is the machine system of record (full state + history). There
+is no `review-queue.md`.
 
 Deep reviews (Rule 4) are produced separately and recorded with
 `helpers/sweep.py --record-review <PR>`. See POLICY.md §5.
