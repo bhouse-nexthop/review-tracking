@@ -196,6 +196,83 @@ def is_nexthop(login, affil=None):
     return "nexthop" in a or (login or "").lower().endswith("-nexthop")
 
 
+_top_orgs = None
+ORG_PREDICT_CSV = os.path.join(ROOT, "data", "sii_org_predict.csv")
+TOP_N_COMPANIES = 20
+
+
+def load_top_companies():
+    """Top-N SONiC contributor orgs by sii_org_predict score, EXCLUDING 'Others'.
+    Returns a list of (org_lower, rank) for the top TOP_N_COMPANIES."""
+    global _top_orgs
+    if _top_orgs is not None:
+        return _top_orgs
+    rows = []
+    if os.path.exists(ORG_PREDICT_CSV):
+        import csv
+        with open(ORG_PREDICT_CSV, newline="") as f:
+            r = csv.reader(f)
+            next(r, None)                                   # header: Organization,Score
+            for row in r:
+                if len(row) >= 2 and row[0].strip().lower() != "others":
+                    try:
+                        rows.append((row[0].strip(), float(row[1])))
+                    except ValueError:
+                        pass
+    rows.sort(key=lambda x: -x[1])
+    _top_orgs = [(o.lower(), i + 1) for i, (o, _) in enumerate(rows[:TOP_N_COMPANIES])]
+    return _top_orgs
+
+
+def top_company_rank(affil):
+    """If the affiliation matches a top-N contributor company, return its rank, else None."""
+    if not affil or affil.lower() == "unknown":
+        return None
+    a = affil.lower()
+    for org, rank in load_top_companies():
+        first = org.split()[0]
+        if org in a or a in org or first == a.split()[0]:
+            return rank
+    return None
+
+
+def author_merged_count(login):
+    """Number of the author's MERGED PRs in the repo (capped at 100 for tiering)."""
+    out = gh_json(["search", "prs", "--repo", REPO, "--author", login,
+                   "--merged", "--limit", "100", "--json", "number"]) or []
+    return len(out)
+
+
+def author_trust(login):
+    """Trust = primarily merged-PR history, with a one-level bump for a top-20 company.
+    Returns (level, detail-dict). Never overrides hard gates (CI-coverage, COI, etc.)."""
+    merged = author_merged_count(login)
+    affil = affil_of(login)
+    rank = top_company_rank(affil)
+    top = rank is not None
+    LADDER = ["Unproven", "Low", "Medium", "High", "Expert"]
+    if merged >= 50:
+        base = "Expert"
+    elif merged >= 25:
+        base = "High"
+    elif merged >= 8:
+        base = "Medium"
+    elif merged >= 1:
+        base = "Low"
+    else:
+        base = "Unproven"
+    # secondary: one-level bump up the ladder for a top-20 company, BUT capped at
+    # High — Expert is an individual-only achievement (merge history), never granted
+    # by company. Unproven is never bumped (a top-company first-timer still proves it).
+    level = base
+    if top and base != "Unproven":
+        i = min(LADDER.index(base) + 1, LADDER.index("High"))
+        if i > LADDER.index(base):
+            level = LADDER[i]
+    return level, {"login": login, "merged_prs": merged, "affiliation": affil,
+                   "top20_company": top, "company_rank": rank, "base": base}
+
+
 def has_write_access(login):
     """Best-effort: does this user have write/maintain/admin on the repo?"""
     d = gh_json(["api", f"repos/{REPO}/collaborators/{login}/permission"]) or {}
@@ -678,7 +755,16 @@ def main():
                     help="report commit-message hygiene across the queue (Rule 9)")
     ap.add_argument("--suggest-reviewers", type=int, metavar="PR",
                     help="list candidate non-NextHop reviewers for a NextHop PR (Rule 8 cross-company gate)")
+    ap.add_argument("--trust", metavar="LOGIN",
+                    help="compute an author's trust level (merge history + top-20 company)")
     args = ap.parse_args()
+
+    if args.trust:
+        level, d = author_trust(args.trust)
+        print(f"{args.trust}: TRUST={level}  (merged PRs={d['merged_prs']}, "
+              f"affiliation={d['affiliation']}, top-20 company={d['top20_company']}"
+              f"{' rank #'+str(d['company_rank']) if d['company_rank'] else ''})")
+        return
 
     if args.merge:
         merge_pr(args.merge, args.apply)

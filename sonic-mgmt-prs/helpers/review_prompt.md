@@ -21,7 +21,7 @@ Output ONLY this brief:
 
 ```
 ### PR #<N> — <title>
-- **Author / affiliation:** <login> / <affiliation>
+- **Author / affiliation / trust:** <login> / <affiliation> / <Expert|High|Medium|Low|Unproven — from `sweep.py --trust <login>`: merged-PR history + top-20 company bump (capped at High; Expert is individual-only)>
 - **Type:** Bug fix | Feature enhancement | New test suite | (mix)
 - **Complexity:** Low | Medium | High — <files/LOC/blast radius; flag shared conftest/fixtures/common libs>
 - **Description summary:** <2-3 sentences>

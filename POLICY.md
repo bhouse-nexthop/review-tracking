@@ -153,7 +153,7 @@ elif CI == PENDING:                  -> no-op (a run is in flight; wait for next
 - **Action:** produce a **review brief** (one per PR) and record `deep_review`.
   Present briefs to the human; do not approve.
 - **Brief fields:** (1) description summary; (2) existing reviews/comments;
-  (3) author affiliation (see §8); (4) type — Bug fix / Feature enhancement /
+  (3) author affiliation + **trust level** (see §8 / §8.1); (4) type — Bug fix / Feature enhancement /
   New test suite / mix; (5) complexity — Low/Med/High; (6) matches description?
   — Yes/Partial/No + note; (7) conflict likelihood vs other open PRs (name
   overlaps); (8) duplication likelihood (name suspected dup or "none seen");
@@ -443,6 +443,35 @@ Resolve in this order; mark **"unknown"** (never guess) if none apply:
 The map doesn't cover everyone (e.g. NextHop authors and some newer logins are
 absent) — those still fall through to the profile/suffix heuristics.
 
+## 8.1 Author trust (review-scrutiny weighting)
+A per-author trust level that modulates **how much scrutiny** a PR gets — it is an
+input to the recommendation, never an override of a hard gate.
+
+- **Five levels:** **Expert · High · Medium · Low · Unproven.**
+- **Primary signal — merged-PR history in the repo** (`sweep.py --trust <login>`
+  counts the author's merged PRs):
+  - **Expert** ≥ 50 · **High** ≥ 25 · **Medium** ≥ 8 · **Low** ≥ 1 · **Unproven** 0.
+  - History is primary on purpose: a prolific contributor with an unresolved
+    company (e.g. 55 merged PRs, affiliation "unknown") is still Expert, and a
+    first-PR author **is Unproven even at a top company**.
+- **Secondary signal — top-20 contributor company** (one-level bump, **capped at
+  High**): if the author's affiliation is in the **top 20** orgs of
+  `sii_org_predict.csv` (`data/sii_org_predict.csv`, **excluding "Others"**), bump
+  one level — Low→Medium, Medium→High. **Expert is individual-only and is NEVER
+  granted by company** — the bump tops out at High; reaching Expert requires the
+  ≥50-merged history on its own. **Unproven is never bumped.** (So 31 merged at a
+  top company = High, not Expert; 53 merged anywhere = Expert.)
+- **How it's used:**
+  - **Expert / High trust** → lighter touch; on low-risk or vendor-own-hardware
+    changes with no red flags, comfortable to approve.
+  - **Unproven / Low** → more scrutiny; read the diff carefully, and for changes
+    CI doesn't validate, lean toward requiring a hardware pass / second opinion
+    even for smaller diffs.
+- **Never overrides hard gates.** Trust does NOT waive: CI-coverage for shared
+  infra (a high-trust author's non-CI-validated *shared* change still needs a real
+  hardware pass), the cross-company COI gate, a `misleading_flag`, or DCO. It only
+  shifts how skeptically we read things that are otherwise in-bounds.
+
 ## 9. The `/azp run` command
 Plain **`/azp run`** queues a *new* run of **all** repo pipelines (new run
 number, picks up current YAML/config) — a full re-run. This is what we want.
@@ -477,4 +506,7 @@ no effect, the commenter may lack trigger rights.
   require hardware-pass evidence** rule with the **vendor-own-hardware exception**,
   and the **approval summary comment** (Rule 8: record type + whether CI ran/passed
   the test + rationale on every approval). Also: DCO-based signoff detection,
-  Rule 5 re-notify cooldown.
+  Rule 5 re-notify cooldown. Added the SII author→org map as affiliation source #1
+  (§8), and the **author-trust metric** (§8.1: 5 levels Expert/High/Medium/Low/
+  Unproven; primary = merged-PR history, secondary = top-20-company bump capped at
+  High; Expert is individual-only).
