@@ -69,3 +69,9 @@
 {"pr": 19020, "action": "deep_review", "date": "2026-06-10", "detail": "review-findings-2026-06-10.md (follow-up batch)", "ts": "2026-06-10T12:50:38Z"}
 {"pr": 18701, "action": "deep_review", "date": "2026-06-10", "detail": "review-findings-2026-06-10.md (follow-up batch)", "ts": "2026-06-10T12:50:38Z"}
 {"pr": 24975, "action": "changes_requested", "date": "2026-06-10", "detail": "dead-sleep -> wait/until; https://github.com/sonic-net/sonic-mgmt/pull/24975#issuecomment-4671600699", "ts": "2026-06-10T15:00:11Z"}
+{"pr": 23930, "action": "merge", "date": "2026-06-10", "detail": "squash: Update variables", "ts": "2026-06-10T15:35:54Z"}
+{"pr": 24493, "action": "merge", "date": "2026-06-10", "detail": "squash: update gnmi setup with insecurity mode", "ts": "2026-06-10T15:36:13Z"}
+{"pr": 24545, "action": "merge", "date": "2026-06-10", "detail": "squash: Fix test_monitoring_critical_processes timeout by killing database container last", "ts": "2026-06-10T15:36:39Z"}
+{"pr": 24597, "action": "merge", "date": "2026-06-10", "detail": "squash: Update the fanout switch deploy step due to lack of /etc/sysctl.conf", "ts": "2026-06-10T15:36:46Z"}
+{"pr": 24876, "action": "merge", "date": "2026-06-10", "detail": "squash: lldp_syncd failure due to not enough converge time", "ts": "2026-06-10T15:36:53Z"}
+{"pr": 25134, "action": "merge", "date": "2026-06-10", "detail": "squash: [conditional_mark]: Enable NTP IPv6-only management test on sonic-vpp", "ts": "2026-06-10T15:37:00Z"}

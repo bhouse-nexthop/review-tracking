@@ -337,8 +337,17 @@ future readers can understand what changed.
   next scan re-catches it.
 
 ### Rule 8 — Merge & squash procedure
-Once a PR is genuinely ready, the agent may perform the merge (after human
-approval — see preconditions), applying these rules.
+**Approve ⇒ merge — they are one step. Whenever we approve a PR, we merge it.**
+Never approve-and-leave; an approval we didn't merge is a bug. The **only** thing
+that stops the merge is the cross-company COI gate: a **NextHop-authored PR with no
+approval from a different company** must not be merged (nor approved-to-completion)
+— it stays **Blocked (COI)** until a non-NextHop reviewer approves. A NextHop PR
+that **does** have a cross-company approval is merged like any other. (Everything
+else — CI not running the test, etc. — is decided at *approval* time; once approved,
+it merges.)
+
+Once a PR is genuinely ready, the agent performs the merge as part of approving,
+applying these rules.
 
 - **Preconditions (ALL required before the agent merges):**
   1. **Human approval** — `reviewDecision == APPROVED` from a human maintainer

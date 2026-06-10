@@ -539,11 +539,12 @@ def dco_status(checks):
 def compose_squash_message(d, commits):
     """Return (subject, body) for the squash commit, preferring the author's
     commit message, guaranteeing a Signed-off-by, and never a Co-authored-by."""
+    # Subject = the PR title (the curated/maintainer-visible one — we fix bad titles
+    # via Rule 7, and GitHub's own squash default uses it), NOT a stale commit headline.
+    subject = d.get("title") or (commits[0].get("messageHeadline") if commits else "")
     if len(commits) == 1:
-        subject = commits[0].get("messageHeadline") or d["title"]
         body_src = commits[0].get("messageBody") or ""
     else:
-        subject = d["title"]
         body_src = "\n".join(f"- {c.get('messageHeadline','')}" for c in commits)
     # strip any Co-authored-by lines and collect existing Signed-off-by lines
     body_lines, signoffs = [], []
@@ -1011,8 +1012,17 @@ def main():
               and responded_since(d, entry_ts(la))]
     if reeval:
         print(f"\nre-evaluate (author/reviewer responded since our action): {sorted(reeval)}")
+
+    # Rule 8 'approve => merge': any PR we've approved that is STILL OPEN is a pending
+    # merge (a held/missed merge). Attempt it every sweep so we never miss one.
+    pending_merge = [d["number"] for d in detail if we_approved(d)]
+    if pending_merge:
+        print(f"\napproved but still open (pending merge — attempting per Rule 8): {sorted(pending_merge)}")
+        for n in sorted(pending_merge):
+            merge_pr(n, args.apply)
+
     if not args.apply:
-        print("\n(dry-run — pass --apply to post comments/ticklers)")
+        print("\n(dry-run — pass --apply to post comments/ticklers/merges)")
 
     print("\nThe full per-PR state is in actions.jsonl (system of record). The human "
           "doc is review-findings.md (regenerated separately — only PRs awaiting our action).")
