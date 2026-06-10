@@ -25,7 +25,7 @@ Usage:
 
 Requires: gh (authenticated), python3. No third-party deps.
 """
-import argparse, json, subprocess, sys, os, datetime, re
+import argparse, json, subprocess, sys, os, datetime, re, time
 
 REPO = os.environ.get("REVIEW_REPO", "sonic-net/sonic-mgmt")
 REVIEWER = os.environ.get("REVIEW_REVIEWER", "bhouse-nexthop")
@@ -56,12 +56,22 @@ AFFIL_SUFFIX = {"-nexthop": "NextHop", "-arista": "Arista", "-cisco": "Cisco",
                 "-marvell": "Marvell"}
 
 
-def gh_json(args):
-    out = subprocess.run(["gh"] + args, capture_output=True, text=True)
-    if out.returncode != 0:
+_TRANSIENT = ("Requires authentication", "HTTP 401", "rate limit",
+              "secondary rate", "submitted too quickly", "HTTP 502", "HTTP 503")
+
+
+def gh_json(args, retries=6):
+    """Run gh and parse JSON. Retries transient auth/rate errors with backoff —
+    GitHub's GraphQL (gh pr view) throttles/401s first under load."""
+    for attempt in range(retries):
+        out = subprocess.run(["gh"] + args, capture_output=True, text=True)
+        if out.returncode == 0:
+            return json.loads(out.stdout) if out.stdout.strip() else None
+        if any(k in out.stderr for k in _TRANSIENT) and attempt < retries - 1:
+            time.sleep(3 * (attempt + 1))
+            continue
         sys.stderr.write(out.stderr)
         raise SystemExit(f"gh failed: {' '.join(args)}")
-    return json.loads(out.stdout) if out.stdout.strip() else None
 
 
 def today():
