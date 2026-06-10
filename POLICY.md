@@ -146,12 +146,19 @@ elif CI == PENDING:                  -> no-op (a run is in flight; wait for next
   current Last-CI timestamp.
 - **Action:** post `/azp run`; record `azp_run`.
 
-### Rule 3 — Clean + failing CI, not yet retried → force a fresh run
-- **Trigger:** `MERGEABLE`, CI = FAIL, no `azp_run` in this failing episode.
-- **Action:** post `/azp run` (a stale/old failure may be a flake or already
-  fixed upstream; re-running confirms the real state); record `azp_run`. On the
-  next sweep this PR resolves to Rule 4 (if it goes green) or Rule 5 (if it
-  fails again).
+### Rule 3 — Clean + failing CI → re-run ONLY if the failure is stale; else ask to fix
+- **Trigger:** `MERGEABLE`, CI = FAIL.
+- **Recency matters — don't re-run a fresh failure.** If CI **ran recently on the
+  current code** (within the staleness window — e.g. a just-rebased PR whose CI ran
+  today and failed), a `/azp run` is pointless: the code is genuinely failing and a
+  re-run on the same commit won't change that. **Ask the author to fix the failures**
+  (`ci_fail_notify`, "fix CI" wording) — do **not** re-run.
+- **Only re-run a STALE failure:** if the failing run is **old** (older than the
+  staleness window) and we haven't retried it, post `/azp run` once — an outdated
+  failure may be a flake or already fixed upstream, and a fresh run confirms the
+  real state. Record `azp_run`; next sweep it resolves to Rule 4 (green) or Rule 5.
+- This is what stops the "they rebased, CI ran today and failed → pointlessly
+  re-running" loop; a fresh failure goes straight to a fix request.
 
 ### Rule 4 — Fresh PR → deep review
 - **Trigger:** `MERGEABLE`, CI = PASS, fresh (within 2 weeks), and no

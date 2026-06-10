@@ -43,6 +43,9 @@ PING_TMPL = ("Hi @{author}, this PR currently has merge conflicts with the targe
 FAIL_TMPL = ("Hi @{author}, we re-triggered CI on this PR and it's still failing. "
              "Could you take a look at the latest run and address the failures? "
              "Once CI is green we'll proceed with review. Thanks!")
+CI_FIX_TMPL = ("Hi @{author}, CI is failing on this PR (it ran on the current commit), "
+               "so a re-run won't help — could you take a look at the failures and fix "
+               "them? Once CI is green we'll proceed with review. Thanks!")
 AZP_BODY = "/azp run"
 # Rule 4 red flag — dead/fixed sleeps are racy; reply with the poll-until-ready fix.
 SLEEP_FIX_MSG = ("This uses a fixed `{what}`, which is racy — it can be too short under "
@@ -454,22 +457,30 @@ def classify_and_plan(detail, ledger):
                 row["action"] = "conflict_ping"; row["reason"] = "Rule 1: new conflict"
         elif state == "FAIL":
             azp_ts = last_action_ts(ledger, pr, "azp_run")
-            notify_ts = last_action_ts(ledger, pr, "ci_fail_notify")
+            notify_date = last_action_date(ledger, pr, "ci_fail_notify")
+            in_cooldown = notify_date and days_since(notify_date) < NOTIFY_COOLDOWN_DAYS
             cmp_last = last or ""
-            if azp_ts is None:
-                # never triggered -> retry once to confirm the failure is real
-                row["action"] = "azp_run"; row["reason"] = "Rule 3: clean+failing, not yet retried"
-            elif azp_ts < cmp_last:
-                # this failing run completed AFTER our /azp run -> the re-run failed
-                notify_date = last_action_date(ledger, pr, "ci_fail_notify")
-                in_cooldown = notify_date and days_since(notify_date) < NOTIFY_COOLDOWN_DAYS
-                if (notify_ts and notify_ts >= cmp_last) or in_cooldown:
-                    row["action"] = "none"; row["reason"] = "Rule 5: already notified (or within cooldown)"
-                else:
-                    row["action"] = "ci_fail_notify"; row["reason"] = "Rule 5: failed after our /azp run"
-            else:
-                # we triggered after this run; a newer run should be in flight
+            recent = days_since(last) <= STALE_DAYS          # failing run ran recently, on current code
+            if azp_ts and azp_ts > cmp_last:
+                # we re-ran after this failure; a newer run should be in flight -> wait
                 row["action"] = "none"; row["reason"] = "re-run triggered; awaiting new result"
+            elif recent:
+                # CI ran recently on the current code and failed -> re-running won't help;
+                # ask the author to fix. (Covers Rule 5 'failed after our /azp run' AND a
+                # fresh failure we didn't trigger, e.g. a just-rebased PR.)
+                if in_cooldown:
+                    row["action"] = "none"; row["reason"] = "CI failing (recent) — notified within cooldown"
+                else:
+                    row["action"] = "ci_fail_notify"
+                    row["notify_kind"] = "post_azp" if azp_ts else "fresh"
+                    row["reason"] = ("Rule 5: failed after our /azp run" if azp_ts
+                                     else "recent CI failure on current code — ask author to fix (no point re-running)")
+            elif azp_ts is None:
+                # STALE failure (old run) we never retried -> one /azp run to rule out an
+                # outdated/flaky failure before bothering the author.
+                row["action"] = "azp_run"; row["reason"] = "Rule 3: clean + STALE failing CI, not yet retried"
+            else:
+                row["action"] = "none"; row["reason"] = "stale failure already re-triggered; awaiting result"
         elif state == "PASS":
             if days_since(last) > STALE_DAYS:
                 azp_ts = last_action_ts(ledger, pr, "azp_run")
@@ -508,8 +519,9 @@ def execute(plan, apply):
         act = row["action"]
         if act in (None, "none", "skip", "escalate", "deep_review"):
             continue  # deep_review is recorded separately after the review runs
+        ci_tmpl = FAIL_TMPL if row.get("notify_kind") == "post_azp" else CI_FIX_TMPL
         body = {"conflict_ping": PING_TMPL.format(author=row["author"]),
-                "ci_fail_notify": FAIL_TMPL.format(author=row["author"]),
+                "ci_fail_notify": ci_tmpl.format(author=row["author"]),
                 "azp_run": AZP_BODY}[act]
         if not apply:
             print(f"  WOULD {act:14} #{row['pr']}: {body[:60]}")
