@@ -165,7 +165,20 @@ elif CI == PENDING:                  -> no-op (a run is in flight; wait for next
   `deep_review` for the current head SHA.
 - **Action:** produce a **review brief** (one per PR) and record `deep_review`.
   Present briefs to the human; do not approve.
-- **Brief fields:** (1) description summary; (2) existing reviews/comments;
+- **Read the INLINE review comments, not just the review state.** A review can be
+  recorded as `COMMENTED` while its **inline/line comments are substantive change
+  requests** (a maintainer often comments rather than formally "Request changes").
+  Always pull the line comments **and** the review bodies — `gh api
+  repos/<repo>/pulls/<n>/comments` (inline) and `.../pulls/<n>/reviews` (bodies) —
+  read each, and judge **whether it's been addressed or is still open** (look for a
+  later commit / "done" reply / the code now matching the ask). **Never approve
+  over an unresolved substantive review comment from a maintainer/SME** — defer to
+  them; the PR stays with the author until those are resolved. (E.g. #24649: lolyu
+  has open inline asks — drop the mock fixtures / run on a real dualtor testbed,
+  use the toggle marks, add port-counter steps — plus a CodeQL uninitialized-var
+  flag; that's not an Approve.)
+- **Brief fields:** (1) description summary; (2) existing reviews/comments — incl.
+  the inline threads above, each marked addressed vs open;
   (3) author affiliation + **trust level** (see §8 / §8.1); (4) type — Bug fix / Feature enhancement /
   New test suite / mix; (5) complexity — Low/Med/High; (6) matches description?
   — Yes/Partial/No + note; (7) conflict likelihood vs other open PRs (name

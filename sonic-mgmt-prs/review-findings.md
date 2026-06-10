@@ -2,18 +2,18 @@
 
 **PRs awaiting our action**, sorted by recommendation — each links to its full brief (click → read → back → next). A PR drops off this doc once it's **approved/merged** or **handed back to the author** (changes/info/evidence requested, conflicting, COI-waiting); full state + history live in `actions.jsonl` + git. Recommendations fold in: does the diff match the description, complexity, **author trust** (§8.1), and **whether CI actually runs the test** (a green check on a skipped test proves nothing — see CI column). _Decision support; approval is the human reviewer's call._
 
-**Tally:** Approve: 2 · Get another opinion: 5 · Blocked (COI): 2  
+**Tally:** Approve: 1 · Get another opinion: 5 · Blocked (COI): 2  
+_(#24649 → off-doc: unresolved maintainer review (lolyu: drop mocks/use toggle marks/add port stats) + CodeQL uninit-var — awaiting author. #23606 merged; #20001 staleness ask; #18660 closed.)_
 _(#23606 merged. #20001 → staleness ask; #18660 closed by author.)_
 _(#20001 → asked author to confirm it's not stale (xfail for swss#3498); #18660 closed by author.)_
 _(Newly reviewed this sweep; #18660 was closed by its author — superseded by #22982.)_
 _(Everything else this cycle is off-doc: 7 merged, 13 change/evidence requests out — all formal blocking Request-changes reviews. See actions.jsonl.)_
 _(Off-doc — awaiting author: #24247, #24320, #24845 (changes requested), #24975 (changes requested). Merged this cycle: #23930, #24493, #24545, #24597, #24876, #25134.)_
 
-## Approve (2)
+## Approve (1)
 
 | PR | Title | Type/Trust | CI runs test? | Why |
 |----|-------|-----------|---------------|-----|
-| [#24649](#pr-24649) | [dualtor] Add tunnel-termination drop test on standby ToR | New test suite / Expert | No (dualtor not in gate) | author linked real HW runs (Cisco 8101 + Arista) → evidence met; closes #21092 |
 | [#24687](#pr-24687) | pfcwd: ignore benign cisco-8000 SAI/orchagent errors | Bug fix (loganalyzer) / Expert | Partial (cisco-8000 branch not on vs) | additive asic-gated ignore-list, idiomatic, low risk |
 
 ## Get another opinion (5)
@@ -169,24 +169,6 @@ _Ordered by recommendation, same as above._
 
 [↑ back to recommendations](#deep-review-findings--sonic-netsonic-mgmt--2026-06-10)
 
-
-<a id="pr-24649"></a>
-
-### [PR #24649](https://github.com/sonic-net/sonic-mgmt/pull/24649) — [dualtor] Add test for tunnel termination drop on standby ToR
-- **➡ Recommendation:** Approve — clean self-contained new dualtor test; all imported helpers/fixtures verified present; call signatures match the established `test_ipinip.py` patterns; closes the #21092 test gap. CI doesn't run it, but the author provided real hardware runs.
-- **Author / affiliation / trust:** yyynini (Yawen) / Microsoft (yawenni@microsoft.com) / Expert (55 merged)
-- **CI runs the test?:** No — not listed in `pr_test_scripts.yaml`, so the KVM gate doesn't run it; `topology('dualtor')` + `enable_active_active`. **Hardware evidence provided:** author linked ElasticTest runs on Cisco 8101 and Arista (libra/gemini) in the PR body → evidence bar met.
-- **Type:** New test case (dualtor IPinIP tunnel-termination drop)
-- **Complexity:** Med — packet construction + 3-way topology branching + negative assertions (`verify_no_packet` + `tunnel_traffic_monitor(existing=False)`).
-- **Description summary:** Adds `test_tunnel_term_drop_standby`: a standby ToR receives an IPinIP packet and the test asserts it's dropped (neither decapsulated to the server nor re-encapsulated to T1), for both active-standby and active-active cable types.
-- **Existing reviews/comments:** github-advanced-security (no findings); lolyu COMMENTED (non-blocking); yxieca AI note (its concerns are already satisfied in-code).
-- **Matches description?:** Yes.
-- **Conflict likelihood:** Low — single new file.
-- **Duplication likelihood:** none — reuses but doesn't duplicate `test_ipinip.py`; this is the dedicated drop/loop-prevention case.
-- **Linked issue(s):** `Fixes #21092` (open test-gap, same-repo + keyword) → **auto-closes on merge to default branch**.
-- **Reviewer notes:** Verified all five imported helpers exist at head SHA and the fixture call signature matches. Optional non-blocking: add the file to `pr_test_scripts.yaml` so it runs in the gated dualtor pipeline rather than only manual ElasticTest.
-
-[↑ back to recommendations](#deep-review-findings--sonic-netsonic-mgmt--2026-06-10)
 
 <a id="pr-24687"></a>
 
