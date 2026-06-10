@@ -65,7 +65,6 @@ _Ordered by recommendation, same as above._
 - **Linked issue(s):** none closeable — references master PR #17641 (a PR); `Fixes #` blank.
 - **Backport verification:** ✓ source #17641 is MERGED (base master, same title); ✓ same 3 files (conftest.py, test_psu.py, test_psu_fans.py); ✓ no newer-only dependency — `get_skip_mod_list`/`skip_absent_psu`/`psu_skip_list` already exist on the 202411 branch. Qualifies for the verified-backport exception → no hardware pass required.
 - **Reviewer notes:** Faithful to master; only a minor PEP8 nit (blank lines before the new module-level function). PSU hardware isn't author-specific.
-- **Suggested recommendation:** Approve — low-risk faithful backport of an already-merged fix, isolated to a release branch.
 
 [↑ back to recommendations](#deep-review-findings--sonic-netsonic-mgmt--2026-06-10)
 
@@ -84,7 +83,6 @@ _Ordered by recommendation, same as above._
 - **Conflict likelihood:** Low — file-isolated.
 - **Duplication likelihood:** none seen.
 - **Reviewer notes:** Minor non-blocking: hardcoded `/tmp` path; `test_func_name` param is always the literal test name (redundant). Already approved by an NVIDIA reviewer.
-- **Suggested recommendation:** Approve — clean opt-in instrumentation, already approved by nhe-NV
 
 [↑ back to recommendations](#deep-review-findings--sonic-netsonic-mgmt--2026-06-10)
 
@@ -103,7 +101,6 @@ _Ordered by recommendation, same as above._
 - **Conflict likelihood:** Low — file-isolated.
 - **Duplication likelihood:** none seen.
 - **Reviewer notes:** (1) `_all_fans_ok` calls `verify_show_platform_fan_output` which asserts internally — if it asserts on malformed output, `wait_until` may not retry cleanly. (2) Destructive (override-reload + cold reboot of a chassis sup), recovery leans on `reboot_and_check`; no `Fixes #` link.
-- **Suggested recommendation:** Get another opinion — new destructive T2 chassis test with no human review yet — wants a platform/T2 SME; add a Fixes link
 
 [↑ back to recommendations](#deep-review-findings--sonic-netsonic-mgmt--2026-06-10)
 
@@ -122,7 +119,6 @@ _Ordered by recommendation, same as above._
 - **Conflict likelihood:** Low — file-isolated.
 - **Duplication likelihood:** none seen.
 - **Reviewer notes:** Additive (can't regress existing matches). Confirm `ports` is in scope/populated at that point; change is unconditional (not ASIC-mode gated) — likely fine as a last-resort fallback. No test added (author validated via internal regression).
-- **Suggested recommendation:** Approve — minimal additive last-resort fallback; low regression risk (a test would be nice-to-have)
 
 [↑ back to recommendations](#deep-review-findings--sonic-netsonic-mgmt--2026-06-10)
 
@@ -141,7 +137,6 @@ _Ordered by recommendation, same as above._
 - **Conflict likelihood:** Low — file-isolated (sibling #25040 touches different bgp files).
 - **Duplication likelihood:** none seen.
 - **Reviewer notes:** (1) Redis `save` restore relies on `config get save` formatting; if it differs or has <2 lines, the original is silently left disabled. (2) 1s→5s coarsens convergence resolution 5× for *all* callers, not just the [500] case — confirm acceptable for sub-5s measurements.
-- **Suggested recommendation:** Get another opinion — the 1s→5s poll change coarsens convergence resolution for ALL callers — wants a scale-test owner's eye
 
 [↑ back to recommendations](#deep-review-findings--sonic-netsonic-mgmt--2026-06-10)
 
@@ -160,7 +155,6 @@ _Ordered by recommendation, same as above._
 - **Conflict likelihood:** Low — file-isolated.
 - **Duplication likelihood:** none seen.
 - **Reviewer notes:** (1) Fixture swap changes DUT-enumeration semantics for *all* topologies (test is `topology('any')`); sanity-check non-dualtor coverage. (2) `get_downlink_router_mac` indexes `config_facts['VLAN'][vlan_interface]` unguarded — KeyError possible in an unlikely config state. Double-approved.
-- **Suggested recommendation:** Approve — faithful dualtor-aa fix, double-approved; note the all-topology fixture swap
 
 [↑ back to recommendations](#deep-review-findings--sonic-netsonic-mgmt--2026-06-10)
 
@@ -179,7 +173,6 @@ _Ordered by recommendation, same as above._
 - **Conflict likelihood:** Low — file-isolated.
 - **Duplication likelihood:** none seen.
 - **Reviewer notes:** (1) New `remove_temp_files` prefixes `/tmp/` to entries that may be full local paths — could target wrong path on PTF host; confirm what `temp_files` holds. (2) `cleanup_step` swallows per-phase exceptions by design (reduces signal if cleanup silently breaks).
-- **Suggested recommendation:** Approve — behavior-preserving diagnostics/cleanup hardening; only confirm the temp-file path assumption
 
 [↑ back to recommendations](#deep-review-findings--sonic-netsonic-mgmt--2026-06-10)
 
@@ -198,7 +191,6 @@ _Ordered by recommendation, same as above._
 - **Conflict likelihood:** Low — file-isolated.
 - **Duplication likelihood:** none seen.
 - **Reviewer notes:** (1) Confirm hardcoded `"1000::1"` is a valid non-conflicting source for the dataplane assertions. (2) Consider shipping the `test_srv6_dataplane.py` fix together per the author's own description.
-- **Suggested recommendation:** Approve — correct fallback; optionally fold in the sibling test_srv6_dataplane.py fix the author mentions
 
 [↑ back to recommendations](#deep-review-findings--sonic-netsonic-mgmt--2026-06-10)
 
@@ -217,7 +209,6 @@ _Ordered by recommendation, same as above._
 - **Conflict likelihood:** Low — files isolated to bgp aggregate suite.
 - **Duplication likelihood:** none seen (#25094 uses the same `disable_memory_utilization` marker on a different file — same pattern, not a dup).
 - **Reviewer notes:** Verify `get_bbr_default_state` and `safe_remove_aggregate` already exist in the helper module (used but not defined in this diff) or imports break.
-- **Suggested recommendation:** Approve — faithful flakiness hardening, approved; just verify the two helpers pre-exist
 
 [↑ back to recommendations](#deep-review-findings--sonic-netsonic-mgmt--2026-06-10)
 
@@ -236,7 +227,6 @@ _Ordered by recommendation, same as above._
 - **Conflict likelihood:** Low — file-isolated.
 - **Duplication likelihood:** none seen (marker reused widely, distinct files).
 - **Reviewer notes:** Clean, idiomatic, consistent with other modules using the marker. One maintainer approval. Nothing needing attention.
-- **Suggested recommendation:** Approve — clean idiomatic marker, approved by nhe-NV
 
 [↑ back to recommendations](#deep-review-findings--sonic-netsonic-mgmt--2026-06-10)
 
@@ -256,7 +246,6 @@ _Ordered by recommendation, same as above._
 - **Duplication likelihood:** none seen.
 - **Linked issue(s):** sonic-buildimage#20108 is a **PR** (cross-repo, closed) — track-only; `Fixes #` blank.
 - **Reviewer notes:** Under-delivers vs its own objectives — TC1 lists 16/32/63-char objectives but exercises only one ~30-char name (no boundary cases); TC2 deletes via raw `redis-cli del` (bypasses config tooling); markdown code-fence glitch; empty PR template. Defer to Microsoft on intent.
-- **Suggested recommendation:** Get another opinion — doc-only/low-risk, but a Microsoft maintainer should decide whether a plan with no test code and untested boundaries clears the "[Test gap]" bar; currently has no valid approval.
 
 [↑ back to recommendations](#deep-review-findings--sonic-netsonic-mgmt--2026-06-10)
 
@@ -276,7 +265,6 @@ _Ordered by recommendation, same as above._
 - **Duplication likelihood:** none — confirmed **sibling** of #21660 (clean series), not a dup.
 - **Linked issue(s):** none — `Fixes #` blank; dependency #21565 already merged.
 - **Reviewer notes:** r12f's dedup-refactor of the two event branches is still largely unmet (substantial duplicated setup/teardown); test only parametrizes IPv6 (IPv4 ranges are dead config); hardcoded `/home/admin/ai_acl.json` + `chmod 666`. Defer to Keysight on the TG harness.
-- **Suggested recommendation:** Get another opinion — defer to r12f/Keysight; confirm the requested dedup-refactor + HLD event naming actually landed ("Still waiting for updates") before approval.
 
 [↑ back to recommendations](#deep-review-findings--sonic-netsonic-mgmt--2026-06-10)
 
@@ -296,7 +284,6 @@ _Ordered by recommendation, same as above._
 - **Duplication likelihood:** none — confirmed **sibling** of #21658 (different file, shared helper), not a dup; r12f's skeleton-dedup request is the legit overlap, deferred.
 - **Linked issue(s):** none — `Fixes #` blank; #21204 (dep, merged) and #21658 (sibling) are PRs.
 - **Reviewer notes:** Fix stale docstring; verify the `configure_acl_for_route_withdrawl` unused import was actually removed; t1 selection still uses `'t1' in hostname` substring (fragile). Defer to Keysight on harness style; skeleton dedup is the only real maintainability lever.
-- **Suggested recommendation:** Get another opinion — sound and isolated, but should land with r12f's sign-off given the deferred skeleton dedup + stale docstring + lingering unused import.
 
 [↑ back to recommendations](#deep-review-findings--sonic-netsonic-mgmt--2026-06-10)
 
@@ -315,7 +302,6 @@ _Ordered by recommendation, same as above._
 - **Conflict likelihood:** Low — file-isolated.
 - **Duplication likelihood:** none seen.
 - **Reviewer notes:** Behavioral nuance: a `pytest_assert`/`pytest.fail` inside a condition is now swallowed and retried to timeout — intended, but any call site relying on fast-fail changes behavior. Title typo ("Exeption").
-- **Suggested recommendation:** Get another opinion — one-line fix but changes shared wait_until semantics repo-wide; have a common-infra maintainer confirm
 
 [↑ back to recommendations](#deep-review-findings--sonic-netsonic-mgmt--2026-06-10)
 
@@ -334,7 +320,6 @@ _Ordered by recommendation, same as above._
 - **Conflict likelihood:** Low — file-isolated.
 - **Duplication likelihood:** none seen.
 - **Reviewer notes:** (1) Author acknowledges a single broken LAG can slip through if not in the sample and its syslog line is dropped — an intentional sensitivity trade-off a maintainer should sign off (the test's purpose is catching missing-SIGTERM regressions). (2) `bgp_wait_seconds_after_config_reload` hardcodes platform `x86_64-nokia_ixr7220_h6_128-r0` and duplicates `config_reload`'s timeout math (will silently drift). No linked issue; `64` is a magic number with no >64-path test evidence shown.
-- **Suggested recommendation:** Get another opinion — intentional syslog-sampling sensitivity trade-off weakens the test's core purpose — needs a maintainer sign-off; also a hardcoded platform string
 
 [↑ back to recommendations](#deep-review-findings--sonic-netsonic-mgmt--2026-06-10)
 
@@ -354,7 +339,6 @@ _Ordered by recommendation, same as above._
 - **Duplication likelihood:** none seen — first Redfish/BMC test plan in the repo.
 - **Linked issue(s):** none closeable — `Fixes #` blank; referenced sonic-net/SONiC#2043, sonic-redfish#1/#2 are all **PRs** (track-only). Dependent HLDs reportedly not yet merged upstream — confirm before acting.
 - **Reviewer notes:** Defer to NextHop on BMC/Aspeed/D-Bus endpoint facts. Reconcile the 29→34 / 11→12 count; the documented `tests/redfish/` tree is a future follow-up.
-- **Suggested recommendation:** Approve (minor nit) — docs-only, isolated, sound; fix the count mismatch and confirm dependent-HLD status. (Repo convention: maintainers don't formally approve docs-only PRs.)
 
 [↑ back to recommendations](#deep-review-findings--sonic-netsonic-mgmt--2026-06-10)
 
@@ -373,7 +357,6 @@ _Ordered by recommendation, same as above._
 - **Conflict likelihood:** Low — file-isolated.
 - **Duplication likelihood:** none seen (references #24384 as the wait_until precedent).
 - **Reviewer notes:** Clean, well-scoped. Confirm the module-scoped autorestart teardown ordering is fine for modules that previously had no autorestart handling. Note timeout discrepancy (50 vs 120).
-- **Suggested recommendation:** Approve — clean, well-scoped consolidation, approved by liamkearney-msft
 
 [↑ back to recommendations](#deep-review-findings--sonic-netsonic-mgmt--2026-06-10)
 
