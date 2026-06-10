@@ -2,9 +2,19 @@
 
 **PRs awaiting our action**, sorted by recommendation — each links to its full brief (click → read → back → next). A PR drops off this doc once it's **approved/merged** or **handed back to the author** (changes/info/evidence requested, conflicting, COI-waiting); full state + history live in `actions.jsonl` + git. Recommendations fold in: does the diff match the description, complexity, **author trust** (§8.1), and **whether CI actually runs the test** (a green check on a skipped test proves nothing — see CI column). _Decision support; approval is the human reviewer's call._
 
-**Tally:** Get another opinion: 5 · Blocked (COI): 2  
+**Tally:** Approve: 4 · Get another opinion: 5 · Blocked (COI): 2  
+_(Newly reviewed this sweep; #18660 was closed by its author — superseded by #22982.)_
 _(Everything else this cycle is off-doc: 7 merged, 13 change/evidence requests out — all formal blocking Request-changes reviews. See actions.jsonl.)_
 _(Off-doc — awaiting author: #24247, #24320, #24845 (changes requested), #24975 (changes requested). Merged this cycle: #23930, #24493, #24545, #24597, #24876, #25134.)_
+
+## Approve (4)
+
+| PR | Title | Type/Trust | CI runs test? | Why |
+|----|-------|-----------|---------------|-----|
+| [#20001](#pr-20001) | Mark Sub port interface port-in-lag cases xFAIL | Test xfail (marker) / Low | Yes | xfail gated on open swss#3498 + t1; self-disarms; clean YAML |
+| [#23606](#pr-23606) | Add tests for static route removal after config reload | New test case / Expert | Yes (t0+dualtor) | CI-validated; minor optional note on a weak BGP-redistribution assertion |
+| [#24649](#pr-24649) | [dualtor] Add tunnel-termination drop test on standby ToR | New test suite / Expert | No (dualtor not in gate) | author linked real HW runs (Cisco 8101 + Arista) → evidence met; closes #21092 |
+| [#24687](#pr-24687) | pfcwd: ignore benign cisco-8000 SAI/orchagent errors | Bug fix (loganalyzer) / Expert | Partial (cisco-8000 branch not on vs) | additive asic-gated ignore-list, idiomatic, low risk |
 
 ## Get another opinion (5)
 
@@ -159,3 +169,75 @@ _Ordered by recommendation, same as above._
 
 [↑ back to recommendations](#deep-review-findings--sonic-netsonic-mgmt--2026-06-10)
 
+
+<a id="pr-20001"></a>
+
+### [PR #20001](https://github.com/sonic-net/sonic-mgmt/pull/20001) — Marking Sub port interface port-in lag cases xFAIL due to community issues
+- **➡ Recommendation:** Approve — 12-line conditional_mark xfail, gated on an open issue URL AND `'t1' in topo_name`, so it self-disarms when sonic-swss#3498 closes. Low blast radius.
+- **Author / affiliation / trust:** apannerselva / Marvell (commit email apannerselva@marvell.com) / Low (3 merged)
+- **CI runs the test?:** Yes — `sub_port_interfaces/test_sub_port_interfaces.py` is in the `t1-lag` gate block; the xfail keys on `'t1' in topo_name`, so the affected params execute on the VS gate.
+- **Type:** Test marker / xfail metadata
+- **Complexity:** Low — pure YAML, two test IDs, no code paths touched.
+- **Description summary:** Adds conditional xfail for the two `test_routing_between_sub_ports_and_port[port_in_lag-l3/svi]` params, gated on open sonic-swss#3498 and t1 topology, to stop them failing CI while the upstream PVID bug is unresolved.
+- **Existing reviews/comments:** yxieca AI review (DISMISSED, no issues); 202505/202511 backport labels.
+- **Matches description?:** Yes.
+- **Conflict likelihood:** Low — appends two stanzas in a frequently-edited file; trivially rebaseable.
+- **Duplication likelihood:** none seen.
+- **Linked issue(s):** sonic-swss#3498 (open) — drives the xfail; no `Fixes #` (correct for a marker PR).
+- **Reviewer notes:** Verified the URL-in-condition pattern is canonical and `update_issue_status` substitutes live open/closed before eval; uses non-strict `xfail` so a future XPASS won't hard-fail.
+
+[↑ back to recommendations](#deep-review-findings--sonic-netsonic-mgmt--2026-06-10)
+
+<a id="pr-23606"></a>
+
+### [PR #23606](https://github.com/sonic-net/sonic-mgmt/pull/23606) — Add tests for static route removal after config reload (#18882)
+- **➡ Recommendation:** Approve (one optional note) — self-contained single-file test addition by a top-tier maintainer; all helpers verified present + imported; CI-gated on t0 and dualtor; addresses a real documented bug.
+- **Author / affiliation / trust:** yxieca (Ying Xie) / Microsoft (ying.xie@microsoft.com) / Expert (100+ merged)
+- **CI runs the test?:** Yes — `route/test_static_route.py` is in both the `t0` and `dualtor` gate blocks; new tests are pure CONFIG_DB + config-reload (VS-compatible), no platform skips.
+- **Type:** New test case (regression coverage)
+- **Complexity:** Med — +261 lines: three tests (IPv4/IPv6/blackhole) + one helper, reusing existing fixtures.
+- **Description summary:** Verifies that removing a static route from CONFIG_DB and running `config reload` clears it from the kernel/FIB; the blackhole case reproduces sonic-buildimage#21423.
+- **Existing reviews/comments:** No human reviews; only `/azp run` cycles.
+- **Matches description?:** Yes — AI-agent-assisted on behalf of yxieca (disclosed).
+- **Conflict likelihood:** Low — pure append to one file.
+- **Duplication likelihood:** none seen.
+- **Linked issue(s):** sonic-mgmt#18882 (open test-gap; partially addressed — no `Fixes` keyword, appropriate since #18882 also wants warmboot coverage) + references sonic-buildimage#21423.
+- **Reviewer notes:** Verified all reused helpers exist on master with matching signatures. Optional: `check_route_redistribution(removed=True)` is a near-no-op for non-redistributed static routes — consider asserting it was advertised before removal, or drop that step.
+
+[↑ back to recommendations](#deep-review-findings--sonic-netsonic-mgmt--2026-06-10)
+
+<a id="pr-24649"></a>
+
+### [PR #24649](https://github.com/sonic-net/sonic-mgmt/pull/24649) — [dualtor] Add test for tunnel termination drop on standby ToR
+- **➡ Recommendation:** Approve — clean self-contained new dualtor test; all imported helpers/fixtures verified present; call signatures match the established `test_ipinip.py` patterns; closes the #21092 test gap. CI doesn't run it, but the author provided real hardware runs.
+- **Author / affiliation / trust:** yyynini (Yawen) / Microsoft (yawenni@microsoft.com) / Expert (55 merged)
+- **CI runs the test?:** No — not listed in `pr_test_scripts.yaml`, so the KVM gate doesn't run it; `topology('dualtor')` + `enable_active_active`. **Hardware evidence provided:** author linked ElasticTest runs on Cisco 8101 and Arista (libra/gemini) in the PR body → evidence bar met.
+- **Type:** New test case (dualtor IPinIP tunnel-termination drop)
+- **Complexity:** Med — packet construction + 3-way topology branching + negative assertions (`verify_no_packet` + `tunnel_traffic_monitor(existing=False)`).
+- **Description summary:** Adds `test_tunnel_term_drop_standby`: a standby ToR receives an IPinIP packet and the test asserts it's dropped (neither decapsulated to the server nor re-encapsulated to T1), for both active-standby and active-active cable types.
+- **Existing reviews/comments:** github-advanced-security (no findings); lolyu COMMENTED (non-blocking); yxieca AI note (its concerns are already satisfied in-code).
+- **Matches description?:** Yes.
+- **Conflict likelihood:** Low — single new file.
+- **Duplication likelihood:** none — reuses but doesn't duplicate `test_ipinip.py`; this is the dedicated drop/loop-prevention case.
+- **Linked issue(s):** `Fixes #21092` (open test-gap, same-repo + keyword) → **auto-closes on merge to default branch**.
+- **Reviewer notes:** Verified all five imported helpers exist at head SHA and the fixture call signature matches. Optional non-blocking: add the file to `pr_test_scripts.yaml` so it runs in the gated dualtor pipeline rather than only manual ElasticTest.
+
+[↑ back to recommendations](#deep-review-findings--sonic-netsonic-mgmt--2026-06-10)
+
+<a id="pr-24687"></a>
+
+### [PR #24687](https://github.com/sonic-net/sonic-mgmt/pull/24687) — pfcwd: ignore benign cisco-8000 SAI/orchagent errors during teardown of test_pfcwd_cli
+- **➡ Recommendation:** Approve — narrow, asic-gated loganalyzer ignore-list extension following the existing vs/KVM pattern in the same fixture; additive-only, zero behavior change on other platforms.
+- **Author / affiliation / trust:** wsycqyz (ShiyanWangMS) / Microsoft / Expert (100+ merged)
+- **CI runs the test?:** Partial — `test_pfcwd_cli.py` is in the gate so the fixture loads/parses, but the new `Cisco8000IgnoreRegex` branch is guarded by `asic_type == 'cisco-8000'`, which never matches on the vs gate — so the ignore behavior itself is hardware-only and not validated; green CI only confirms the existing path is unbroken.
+- **Type:** Bug fix (test reliability / loganalyzer false-positive suppression)
+- **Complexity:** Low — 1 file, +16/-0: a regex list + one conditional `extend`.
+- **Description summary:** On cisco-8000, `test_pfcwd_show_stat` passes but flags ERROR at teardown from a burst of benign syncd/orchagent ERR lines during LAG-member QoS rebind. Suppresses only those signatures, only on cisco-8000, mirroring the existing vs/KVM ignore pattern; root-cause orchagent fix tracked separately.
+- **Existing reviews/comments:** No human reviews; bot/automation only.
+- **Matches description?:** Yes — exactly the six regexes + cisco-8000-gated `extend`.
+- **Conflict likelihood:** Low — single fixture in one file.
+- **Duplication likelihood:** none seen.
+- **Linked issue(s):** none (`Fixes #` blank; a nightly testplan ID referenced, no GitHub issue).
+- **Reviewer notes:** Verified the asic-gated `ignore_regex.extend` pattern is idiomatic (matches existing vs/KVM/Tacacs blocks in this fixture). Minor: a couple of the regexes are somewhat generic, so they'd suppress those syncd lines for any test using this fixture on cisco-8000 — acceptable given the cisco-8000 + single-file scope.
+
+[↑ back to recommendations](#deep-review-findings--sonic-netsonic-mgmt--2026-06-10)

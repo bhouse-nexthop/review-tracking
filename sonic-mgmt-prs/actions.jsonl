@@ -88,3 +88,11 @@
 {"pr": 25000, "action": "evidence_request", "date": "2026-06-10", "detail": "formal request-changes: hardware-pass evidence", "ts": "2026-06-10T16:58:09Z"}
 {"pr": 25040, "action": "evidence_request", "date": "2026-06-10", "detail": "formal request-changes: hardware-pass evidence", "ts": "2026-06-10T16:58:09Z"}
 {"pr": 25094, "action": "evidence_request", "date": "2026-06-10", "detail": "formal request-changes: hardware-pass evidence", "ts": "2026-06-10T16:58:09Z"}
+{"pr": 24367, "action": "ci_fail_notify", "date": "2026-06-10", "detail": "https://github.com/sonic-net/sonic-mgmt/pull/24367#issuecomment-4672875249", "ts": "2026-06-10T17:49:57Z"}
+{"pr": 24507, "action": "ci_fail_notify", "date": "2026-06-10", "detail": "https://github.com/sonic-net/sonic-mgmt/pull/24507#issuecomment-4672875434", "ts": "2026-06-10T17:49:57Z"}
+{"pr": 22569, "action": "ci_fail_notify", "date": "2026-06-10", "detail": "https://github.com/sonic-net/sonic-mgmt/pull/22569#issuecomment-4672875612", "ts": "2026-06-10T17:49:57Z"}
+{"pr": 21411, "action": "ci_fail_notify", "date": "2026-06-10", "detail": "https://github.com/sonic-net/sonic-mgmt/pull/21411#issuecomment-4672875847", "ts": "2026-06-10T17:49:57Z"}
+{"pr": 24687, "action": "deep_review", "date": "2026-06-10", "detail": "review-findings.md (sweep-2 batch)", "ts": "2026-06-10T17:54:20Z"}
+{"pr": 24649, "action": "deep_review", "date": "2026-06-10", "detail": "review-findings.md (sweep-2 batch)", "ts": "2026-06-10T17:54:20Z"}
+{"pr": 23606, "action": "deep_review", "date": "2026-06-10", "detail": "review-findings.md (sweep-2 batch)", "ts": "2026-06-10T17:54:20Z"}
+{"pr": 20001, "action": "deep_review", "date": "2026-06-10", "detail": "review-findings.md (sweep-2 batch)", "ts": "2026-06-10T17:54:20Z"}

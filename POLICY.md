@@ -288,6 +288,13 @@ elif CI == PENDING:                  -> no-op (a run is in flight; wait for next
   on the fresh run, and no `ci_fail_notify` exists for this failing episode.
 - **Action:** comment notifying the author that CI failed after a re-run and
   asking them to investigate; record `ci_fail_notify`.
+- **A `ci_fail_notify` is a plain comment, NOT a formal blocking review** — the
+  failing CI check is *already* blocking and visible to every reviewer, so a
+  formal Request-changes review would be redundant. (This is the exception to the
+  "post requests as a formal blocking review" rule, which applies to our
+  *subjective* asks — changes / hardware-evidence / another-opinion — that aren't
+  otherwise visibly blocking.) Applies to both the post-`/azp run` failure and the
+  fresh-failure "please fix CI" case (Rule 3).
 - **Template:**
   > Hi @{author}, we re-triggered CI on this PR and it's still failing. Could
   > you take a look at the latest run and address the failures? Once CI is green
