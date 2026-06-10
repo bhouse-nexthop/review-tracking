@@ -454,13 +454,16 @@ input to the recommendation, never an override of a hard gate.
   - History is primary on purpose: a prolific contributor with an unresolved
     company (e.g. 55 merged PRs, affiliation "unknown") is still Expert, and a
     first-PR author **is Unproven even at a top company**.
-- **Secondary signal — top-20 contributor company** (one-level bump, **capped at
-  High**): if the author's affiliation is in the **top 20** orgs of
-  `sii_org_predict.csv` (`data/sii_org_predict.csv`, **excluding "Others"**), bump
-  one level — Low→Medium, Medium→High. **Expert is individual-only and is NEVER
-  granted by company** — the bump tops out at High; reaching Expert requires the
-  ≥50-merged history on its own. **Unproven is never bumped.** (So 31 merged at a
-  top company = High, not Expert; 53 merged anywhere = Expert.)
+- **Secondary signal — major contributor company** (one-level bump, **capped at
+  High**): if the author's affiliation has an `sii_org_predict.csv` score
+  **> 1500** (`data/sii_org_predict.csv`, **excluding "Others"** — currently the
+  ~12 orgs Microsoft, Nvidia, Google, Arista, Cisco, Nexthop, Broadcom, Nokia,
+  Marvell, Dell Technologies, Micas, Alibaba), bump one level — Low→Medium,
+  Medium→High. **Expert is individual-only and is NEVER granted by company** — the
+  bump tops out at High; reaching Expert requires the ≥50-merged history on its
+  own. **Unproven is never bumped.** (So 31 merged at a major company = High, not
+  Expert; 53 merged anywhere = Expert; a Keysight/Juniper author — score < 1500 —
+  gets no bump and must earn each level on history.)
 - **How it's used:**
   - **Expert / High trust** → lighter touch; on low-risk or vendor-own-hardware
     changes with no red flags, comfortable to approve.
@@ -508,5 +511,5 @@ no effect, the commenter may lack trigger rights.
   the test + rationale on every approval). Also: DCO-based signoff detection,
   Rule 5 re-notify cooldown. Added the SII author→org map as affiliation source #1
   (§8), and the **author-trust metric** (§8.1: 5 levels Expert/High/Medium/Low/
-  Unproven; primary = merged-PR history, secondary = top-20-company bump capped at
-  High; Expert is individual-only).
+  Unproven; primary = merged-PR history, secondary = major-company (score>1500) bump
+  capped at High; Expert is individual-only).

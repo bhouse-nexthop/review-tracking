@@ -198,12 +198,13 @@ def is_nexthop(login, affil=None):
 
 _top_orgs = None
 ORG_PREDICT_CSV = os.path.join(ROOT, "data", "sii_org_predict.csv")
-TOP_N_COMPANIES = 20
+MIN_COMPANY_SCORE = 1500.0
 
 
 def load_top_companies():
-    """Top-N SONiC contributor orgs by sii_org_predict score, EXCLUDING 'Others'.
-    Returns a list of (org_lower, rank) for the top TOP_N_COMPANIES."""
+    """SONiC contributor orgs with sii_org_predict score > MIN_COMPANY_SCORE,
+    EXCLUDING 'Others'. Returns a list of (org_lower, rank) — rank is overall
+    position by score among non-Others orgs."""
     global _top_orgs
     if _top_orgs is not None:
         return _top_orgs
@@ -220,12 +221,13 @@ def load_top_companies():
                     except ValueError:
                         pass
     rows.sort(key=lambda x: -x[1])
-    _top_orgs = [(o.lower(), i + 1) for i, (o, _) in enumerate(rows[:TOP_N_COMPANIES])]
+    _top_orgs = [(o.lower(), i + 1) for i, (o, s) in enumerate(rows) if s > MIN_COMPANY_SCORE]
     return _top_orgs
 
 
 def top_company_rank(affil):
-    """If the affiliation matches a top-N contributor company, return its rank, else None."""
+    """If the affiliation matches a contributor company with score > MIN_COMPANY_SCORE,
+    return its rank, else None."""
     if not affil or affil.lower() == "unknown":
         return None
     a = affil.lower()
@@ -270,7 +272,7 @@ def author_trust(login):
         if i > LADDER.index(base):
             level = LADDER[i]
     return level, {"login": login, "merged_prs": merged, "affiliation": affil,
-                   "top20_company": top, "company_rank": rank, "base": base}
+                   "top_company": top, "company_rank": rank, "base": base}
 
 
 def has_write_access(login):
@@ -762,7 +764,7 @@ def main():
     if args.trust:
         level, d = author_trust(args.trust)
         print(f"{args.trust}: TRUST={level}  (merged PRs={d['merged_prs']}, "
-              f"affiliation={d['affiliation']}, top-20 company={d['top20_company']}"
+              f"affiliation={d['affiliation']}, top-company(score>1500)={d['top_company']}"
               f"{' rank #'+str(d['company_rank']) if d['company_rank'] else ''})")
         return
 
