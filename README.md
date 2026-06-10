@@ -27,6 +27,7 @@ Other modes:
 ```bash
 python3 helpers/sweep.py --issues            # linked-issue / close-on-merge report (Rule 6)
 python3 helpers/sweep.py --commits           # commit-message hygiene report (Rule 9)
+python3 helpers/sweep.py --suggest-reviewers <PR>  # cross-company reviewer candidates for a NextHop PR (Rule 8)
 python3 helpers/sweep.py --merge <PR>        # dry-run squash/rebase plan + message (Rule 8)
 python3 helpers/sweep.py --merge <PR> --apply     # execute the merge (after human approval)
 python3 helpers/sweep.py --close-issues <PR> --apply  # manual issue close after merge (Rule 6)

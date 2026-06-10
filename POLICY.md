@@ -50,8 +50,16 @@ Every action is appended to `<repo>/actions.jsonl`, one JSON object per line:
 ```
 
 Action types: `conflict_ping`, `azp_run`, `ci_fail_notify`, `deep_review`,
-`escalate`, `issue_close`, `title_desc_edit`, `misleading_flag`,
-`commit_msg_notice`, `merge`.
+`escalate`, `issue_close`, `misleading_flag`, `commit_msg_notice`, `merge`.
+
+**What gets logged — the principle:** log an action **only if its triggering
+condition persists after we act**, so the ledger can stop us repeating it.
+Conflicts, stale/failing CI, weak commit messages, and misleading descriptions
+all persist until the author (or a merge) resolves them — so those actions are
+logged. A **title/description rewrite removes its own trigger** (the title is now
+adequate; the next scan won't re-flag it), so it is **not** logged — tracking it
+would only add noise. If an author later regresses a title we fixed, the next
+scan simply catches it again and we re-fix — no ledger needed.
 
 **Golden rule — check the ledger before acting.** No rule fires for a PR if an
 equivalent action already exists for the current episode. This is what stops
@@ -73,9 +81,6 @@ repeated pings and repeated `/azp run`. Concretely:
   re-review). Trivial rebases don't.
 - **`issue_close`** — only after the PR is merged, only for issues that won't
   auto-close (see Rule 6), and only once per (PR, issue) pair.
-- **`title_desc_edit`** — only once per PR unless the author later regresses it
-  (a new edit may be warranted if they overwrite our cleanup with another
-  inadequate version).
 
 ---
 
@@ -92,6 +97,10 @@ repeated pings and repeated `/azp run`. Concretely:
 4b. **Title/description hygiene (Rule 7):** independently of the rule above,
    check **every** PR's title/description and edit the woefully-inadequate ones.
    This is not gated on CI/merge state.
+4c. **Commit-message hygiene (Rule 9):** check **every** PR's commit messages and
+   post the one-time policy notice to any with weak/missing-signoff messages, so
+   the author can fix it before the PR is merge-ready. Not gated on CI/merge
+   state; idempotent via `commit_msg_notice`.
 5. **Regenerate** the tracking table and findings (`gen_table.py`).
 6. **Report** to the human: new actions taken, escalations, and the current
    eligible-for-review set.
@@ -263,8 +272,11 @@ future readers can understand what changed.
   do better next time. **Tone: firm but professional**, never hostile or
   demeaning; these are public, attributed to us, and aimed at fellow OSS
   contributors. Community standing matters more than venting.
-- **Idempotency:** record `title_desc_edit` (§3); don't re-edit unless the
-  author regresses it.
+- **Idempotency:** **not logged** — the rewrite makes the title adequate, so the
+  next scan won't re-flag it (see §3 "what gets logged"). The PR's own new
+  title/body + the audit HTML-comment + the public author notice are the durable
+  record; a ledger entry would just be noise. If the author regresses it, the
+  next scan re-catches it.
 
 ### Rule 8 — Merge & squash procedure
 Once a PR is genuinely ready, the agent may perform the merge (after human
@@ -276,9 +288,22 @@ approval — see preconditions), applying these rules.
   2. CI green (latest = PASS), `mergeable == MERGEABLE`, not a draft.
   3. **No open `misleading_flag`** and no unresolved blocking review on the PR
      (a misleading/unclear description means it isn't reviewable → don't merge).
-  4. Linked issues noted for close-on-merge (Rule 6).
+  4. **Cross-company gate (conflict of interest):** if the PR **author is from
+     our own company (NextHop)**, the approvals must include **at least one
+     approval from a different company**. We **never** merge a NextHop-authored
+     PR on NextHop-only approvals. Resolve affiliation per §8; NextHop = profile
+     company "NextHop", a `-nexthop` login, or an `@nexthop.ai` email.
+  5. Linked issues noted for close-on-merge (Rule 6).
   The agent never merges on a third-party approval alone without these met; when
   in doubt, leave it for the human.
+- **Finding a cross-company reviewer (for our own PRs).** When a NextHop-authored
+  PR lacks a non-NextHop approval, don't just wait — proactively line up a
+  suitable external reviewer: someone who has **previously contributed to / has
+  approval rights in the same area** (the files/paths this PR touches). Request
+  their review (add them as a reviewer or tag them in a comment), or surface the
+  candidates to the human. `sweep.py --suggest-reviewers <PR>` lists candidates
+  (recent non-NextHop contributors to the touched paths, with a best-effort
+  write-access check). This keeps our own PRs honest and unblocks them legitimately.
 - **Method — squash by default.** Use squash-merge for essentially everything.
   - **Exception → rebase-and-merge:** only when the PR is **large (>1000 lines
     total)** **and** its commits are **individually, independently auditable**
@@ -310,7 +335,14 @@ approval — see preconditions), applying these rules.
 Commit messages matter as much as the PR description — at squash time the commit
 message is what we *prefer* for the permanent record, so encourage good ones.
 
-- **Sweep:** check each PR's commit message(s) for: (a) a reasonable, descriptive
+- **When evaluated — at SWEEP time, not at merge.** The commit-message check and
+  the author notice run as part of each sweep (sweep step 4c), the same way the
+  title/description check does. The point is to tell the author **early** so they
+  can fix it themselves (a quick amend/rebase) long before the PR is ready to
+  merge — not to surprise them at merge time. Merge (Rule 8) never posts a commit
+  notice; if a message is still inadequate at merge, we silently rewrite the
+  squash message instead.
+- **Sweep check:** each PR's commit message(s) for: (a) a reasonable, descriptive
   message (not `wip`, `fix`, `address comments`, `.`), and (b) a
   `Signed-off-by: Full Name <email>` trailer (DCO requires it anyway).
 - **Inadequate (vague but not wrong) → comment, don't block.** Post a

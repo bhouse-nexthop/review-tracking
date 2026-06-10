@@ -153,6 +153,32 @@ def close_candidates(refs, merged_to_default=True):
     return cands, autos, notes
 
 
+_affil_cache = {}
+
+
+def affil_of(login):
+    """Resolve a login's affiliation (cached); profile company, else login suffix."""
+    if not login:
+        return "unknown"
+    if login in _affil_cache:
+        return _affil_cache[login]
+    d = gh_json(["api", f"users/{login}"]) or {}
+    a = affiliation(login, d.get("company"))
+    _affil_cache[login] = a
+    return a
+
+
+def is_nexthop(login, affil=None):
+    a = affil or affil_of(login)
+    return a == "NextHop" or (login or "").lower().endswith("-nexthop")
+
+
+def has_write_access(login):
+    """Best-effort: does this user have write/maintain/admin on the repo?"""
+    d = gh_json(["api", f"repos/{REPO}/collaborators/{login}/permission"]) or {}
+    return d.get("permission") in ("write", "maintain", "admin")
+
+
 def ci_state(checks):
     """Return (state, last_completed_iso)."""
     if not checks:
@@ -382,7 +408,7 @@ def merge_pr(pr, apply):
     """Squash-merge (or rebase for large auditable PRs) after verifying preconditions."""
     d = gh_json(["pr", "view", str(pr), "--repo", REPO, "--json",
                  "title,author,mergeable,reviewDecision,isDraft,statusCheckRollup,"
-                 "additions,deletions,headRefName,baseRefName"])
+                 "additions,deletions,headRefName,baseRefName,reviews"])
     if not d:
         raise SystemExit(f"PR #{pr} not found")
     # mergeable is lazy: re-poll a few times if UNKNOWN
@@ -404,6 +430,19 @@ def merge_pr(pr, apply):
         miss.append("draft")
     if any(e["pr"] == pr and e["action"] == "misleading_flag" for e in ledger):
         miss.append("open misleading_flag (not reviewable)")
+    # Cross-company (COI) gate: a NextHop-authored PR needs a non-NextHop approval
+    author_login = (d.get("author") or {}).get("login", "")
+    if is_nexthop(author_login):
+        latest = {}
+        for rv in (d.get("reviews") or []):
+            who = (rv.get("author") or {}).get("login")
+            if who:
+                latest[who] = rv.get("state")
+        approvers = [w for w, s in latest.items() if s == "APPROVED"]
+        cross = [w for w in approvers if not is_nexthop(w)]
+        if not cross:
+            miss.append(f"NextHop-authored PR ({author_login}) lacks a non-NextHop "
+                        f"approval (COI) — run: sweep.py --suggest-reviewers {pr}")
     if miss:
         print(f"#{pr}: NOT merging — preconditions unmet: {'; '.join(miss)}")
         return
@@ -434,6 +473,92 @@ def merge_pr(pr, apply):
     print(f"  MERGED (#{pr}, {method}).")
     # close-on-merge for linked issues (Rule 6)
     close_issues_for_merged_pr(pr, apply=True)
+
+
+def suggest_reviewers(pr):
+    """List candidate external (non-NextHop) reviewers who recently contributed to
+    the paths this PR touches — for the cross-company gate (Rule 8)."""
+    d = gh_json(["pr", "view", str(pr), "--repo", REPO,
+                 "--json", "files,author,title"]) or {}
+    author = (d.get("author") or {}).get("login", "")
+    files = [f["path"] for f in (d.get("files") or [])]
+    # touched paths: the files themselves + their immediate dirs
+    paths = set(files)
+    for f in files:
+        parts = f.split("/")
+        for depth in (3, 2):                          # narrow then broader parent dir
+            if len(parts) > depth:
+                paths.add("/".join(parts[:depth]))
+    print(f"# Suggested cross-company reviewers for #{pr} — {d.get('title','')}")
+    print(f"# author: {author} ({affil_of(author)}); touched {len(files)} file(s)\n")
+    tally = {}
+    for p in sorted(paths):
+        commits = gh_json(["api", f"repos/{REPO}/commits?path={p}&per_page=20"]) or []
+        for c in commits:
+            login = ((c.get("author") or {}) or {}).get("login")
+            if login:
+                tally[login] = tally.get(login, 0) + 1
+    cands = []
+    for login, cnt in tally.items():
+        if login == author or login.endswith("[bot]") or login in ("mssonicbld",):
+            continue
+        a = affil_of(login)
+        if is_nexthop(login, a):
+            continue
+        cands.append((cnt, login, a))
+    cands.sort(reverse=True)
+    if not cands:
+        print("(no non-NextHop recent contributors found in these paths)")
+        return
+    print(f"{'commits':>7}  {'login':22} {'affiliation':18} write-access?")
+    for cnt, login, a in cands[:8]:
+        wa = "yes" if has_write_access(login) else "?"
+        print(f"{cnt:>7}  {login:22} {a:18} {wa}")
+    print("\nRequest a review from one of the above (gh pr edit --add-reviewer <login>) "
+          "or tag them in a comment.")
+
+
+COMMIT_MSG_NOTICE = (
+    "Heads-up on commit-message hygiene: please make sure each commit has a "
+    "clear, descriptive message and a `Signed-off-by: Full Name <email>` trailer "
+    "(the DCO check requires the sign-off). On merge we squash and **prefer your "
+    "commit message** as the permanent record, so a meaningful message helps "
+    "everyone later. Please also avoid `Co-authored-by` lines. Fixing this now "
+    "(a quick interactive rebase / amend) keeps things moving — thanks!")
+
+
+def commit_hygiene_issues(commits):
+    """Return a list of specific problems with a PR's commit messages, or []."""
+    problems = []
+    weak = [c.get("messageHeadline", "") for c in commits
+            if WEAK_MSG.match((c.get("messageHeadline") or "").strip())]
+    if weak:
+        problems.append(f"non-descriptive commit subject(s): {weak}")
+    if commits and not has_signoff(commits):
+        problems.append("missing Signed-off-by on one or more commits")
+    return problems
+
+
+def commit_hygiene_sweep(pr_list, ledger, apply):
+    """Per-sweep (Rule 9): post a one-time commit-message policy notice to PRs with
+    weak/missing-signoff commit messages, so the author can fix it BEFORE merge."""
+    posted = 0
+    for d in pr_list:
+        pr = d["number"]
+        if any(e["pr"] == pr and e["action"] == "commit_msg_notice" for e in ledger):
+            continue                                   # already notified (idempotent)
+        problems = commit_hygiene_issues(pr_commits(pr))
+        if not problems:
+            continue
+        if not apply:
+            print(f"  WOULD commit_msg_notice #{pr}: {'; '.join(problems)}")
+            continue
+        url = post_comment(pr, COMMIT_MSG_NOTICE)
+        if url:
+            append_ledger({"pr": pr, "action": "commit_msg_notice", "date": today(), "detail": url})
+            posted += 1
+            print(f"  DID  commit_msg_notice #{pr}: {url}")
+    return posted
 
 
 def report_commit_hygiene():
@@ -532,10 +657,15 @@ def main():
                     help="squash-merge (rebase if large+auditable) PR after checking preconditions (Rule 8)")
     ap.add_argument("--commits", action="store_true",
                     help="report commit-message hygiene across the queue (Rule 9)")
+    ap.add_argument("--suggest-reviewers", type=int, metavar="PR",
+                    help="list candidate non-NextHop reviewers for a NextHop PR (Rule 8 cross-company gate)")
     args = ap.parse_args()
 
     if args.merge:
         merge_pr(args.merge, args.apply)
+        return
+    if args.suggest_reviewers:
+        suggest_reviewers(args.suggest_reviewers)
         return
     if args.commits:
         report_commit_hygiene()
@@ -567,6 +697,13 @@ def main():
                   f"last={r['last_ci'] or '—':10} — {r['reason']}")
     print()
     execute(plan, args.apply)
+
+    # Rule 9: commit-message hygiene runs as part of the sweep (NOT at merge), so
+    # the author gets a chance to fix it before the PR is ready to merge.
+    print("\ncommit-message hygiene (Rule 9):")
+    commit_hygiene_sweep(detail, ledger, args.apply)
+    if not args.apply:
+        print("  (dry-run — pass --apply to post commit-message notices)")
 
     if not args.no_render:
         render_table(detail, plan, ledger)
