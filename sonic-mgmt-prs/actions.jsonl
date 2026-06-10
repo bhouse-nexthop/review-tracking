@@ -75,3 +75,6 @@
 {"pr": 24597, "action": "merge", "date": "2026-06-10", "detail": "squash: Update the fanout switch deploy step due to lack of /etc/sysctl.conf", "ts": "2026-06-10T15:36:46Z"}
 {"pr": 24876, "action": "merge", "date": "2026-06-10", "detail": "squash: lldp_syncd failure due to not enough converge time", "ts": "2026-06-10T15:36:53Z"}
 {"pr": 25134, "action": "merge", "date": "2026-06-10", "detail": "squash: [conditional_mark]: Enable NTP IPv6-only management test on sonic-vpp", "ts": "2026-06-10T15:37:00Z"}
+{"pr": 24247, "action": "changes_requested", "date": "2026-06-10", "detail": "https://github.com/sonic-net/sonic-mgmt/pull/24247#issuecomment-4671951099", "ts": "2026-06-10T15:49:16Z"}
+{"pr": 24320, "action": "changes_requested", "date": "2026-06-10", "detail": "https://github.com/sonic-net/sonic-mgmt/pull/24320#issuecomment-4671952102", "ts": "2026-06-10T15:49:16Z"}
+{"pr": 24845, "action": "changes_requested", "date": "2026-06-10", "detail": "https://github.com/sonic-net/sonic-mgmt/pull/24845#issuecomment-4671952282", "ts": "2026-06-10T15:49:16Z"}

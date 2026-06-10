@@ -2,16 +2,8 @@
 
 **PRs awaiting our action**, sorted by recommendation — each links to its full brief (click → read → back → next). A PR drops off this doc once it's **approved/merged** or **handed back to the author** (changes/info/evidence requested, conflicting, COI-waiting); full state + history live in `actions.jsonl` + git. Recommendations fold in: does the diff match the description, complexity, **author trust** (§8.1), and **whether CI actually runs the test** (a green check on a skipped test proves nothing — see CI column). _Decision support; approval is the human reviewer's call._
 
-**Tally:** Request changes: 3 · Needs hardware-pass evidence: 10 · Get another opinion: 5 · Blocked (COI): 2  
-_(6 approved & merged-track this cycle: #23930, #24493, #24545, #24597, #24876, #25134 — now off-doc; #24975 awaiting author.)_
-
-## Request changes (3)
-
-| PR | Title | Type/Trust | CI runs test? | Why |
-|----|-------|-----------|---------------|-----|
-| [#24247](#pr-24247) | [SNAPPI][AI] Finding the minimum frame size wi… | New test suite / Medium | No (snappi/nut) | resolve global test_results xdist hazard + double-start, then snappi pass |
-| [#24320](#pr-24320) | changes for port speed test enhancement | Mix (refactor+fix) / High | No (t2/lrh/urh) | Partial match + scope creep; abdosi says approach may be superseded |
-| [#24845](#pr-24845) | ARS test script | New test suite / Medium | No (marvell-teralynx) | fix live CodeQL regex + acl.json action/value mismatch, then marvell HW pass |
+**Tally:** Needs hardware-pass evidence: 10 · Get another opinion: 5 · Blocked (COI): 2  
+_(Off-doc — awaiting author: #24247, #24320, #24845 (changes requested), #24975 (changes requested). Merged this cycle: #23930, #24493, #24545, #24597, #24876, #25134.)_
 
 ## Needs hardware-pass evidence (10)
 
@@ -50,77 +42,6 @@ _(6 approved & merged-track this cycle: #23930, #24493, #24545, #24597, #24876, 
 ## Briefs
 
 _Ordered by recommendation, same as above._
-
-<a id="pr-24247"></a>
-
-### [PR #24247](https://github.com/sonic-net/sonic-mgmt/pull/24247) — [SNAPPI][AI] Finding the minimum frame size with no packet loss
-- **➡ Recommendation:** Request changes — resolve global test_results xdist hazard + double-start, then snappi pass
-- **Author / affiliation:** vikumarks (Vinod Kumar) / Keysight Technologies (Snappi/Ixia TG vendor)
-- **Trust:** Medium (Keysight)
-- **CI runs the test?:** No (snappi/nut)
-- **Type:** New test suite — new `tests/snappi_tests/dataplane/test_min_frame_size.py` + additive `boundary_check` helper in `dataplane/files/helper.py`
-- **Complexity:** Medium — 2 files, +242/-0; one net-new, one additive helper (shared by the dataplane snappi suite). Runs only on `topology("nut")` with an Ixia/IxNetwork backend.
-- **Description summary:** Binary-searches 64-byte-aligned frame sizes (64..9100) at 100% line rate to find the smallest size with zero loss, for IPv4/IPv6 and RFC2889 on/off; sanity-checks the max frame first, then leftmost-True binary search, recording to a DataFrame + GaugeMetric.
-- **Existing reviews/comments:** banidoru (AI reviewer, 3 iterations) — early CHANGES_REQUESTED, latest COMMENTED ("most concerns addressed, ~5 minor open"). yxieca non-blocking AI note. No human approval (REVIEW_REQUIRED, mergeStateStatus BLOCKED).
-- **Matches description?:** Yes — implements the binary-search min-frame flow. (Body summary line says "maximum traffic rate" but the implementation/title target minimum frame size.)
-- **Conflict likelihood:** Low — new file isolated; helper.py change is a single appended function.
-- **Duplication likelihood:** none seen.
-- **Linked issue(s):** none — `Fixes #` placeholder blank.
-- **Reviewer notes:** Two real, still-open items in head: (1) module-level `global test_results` DataFrame mutated across parametrized runs → xdist/parallel contamination risk; (2) possible double traffic start (`start_stop(start,…)` then `boundary_check` calls `StartStatelessTrafficBlocking()` with no intervening stop). Uses private RestPy (`snappi_api._ixnetwork`) — Ixia-only by design (defer to Keysight), but breaks the vendor-neutral SNAPPI abstraction.
-- **Requested changes (to post):**
-  1. **`global test_results` DataFrame** — it's module-level and mutated across parametrized runs, so under xdist/`-n` (or repeated params) results contaminate each other. Scope it to a fixture / per-test return instead of a module global.
-  2. **Double traffic start** — `start_stop(start, traffic)` runs, then the first `boundary_check` calls `StartStatelessTrafficBlocking()` with no intervening stop. Stop before re-starting (or start traffic once).
-  3. **Description nit** — the Summary says "maximum traffic rate" but the test finds the *minimum frame size*; please correct it.
-  - Also: the PR-gate doesn't run this (snappi/`nut`), so please attach a passing snappi/Ixia run before merge. We defer to Keysight on the Ixia-private RestPy usage.
-
-[↑ back to recommendations](#deep-review-findings--sonic-netsonic-mgmt--2026-06-10)
-
-<a id="pr-24320"></a>
-
-### [PR #24320](https://github.com/sonic-net/sonic-mgmt/pull/24320) — changes for port speed test enhancement
-- **➡ Recommendation:** Request changes — Partial match + scope creep; abdosi says approach may be superseded
-- **Author / affiliation:** rawal01 / Nokia
-- **Trust:** High (Nokia)
-- **CI runs the test?:** No (t2/lrh/urh)
-- **Type:** Mix — test refactor + several incidental bug fixes
-- **Complexity:** Medium-High — single file, +257/-111, near-total rewrite of fixture/DUT-selection logic + multi-ASIC plumbing; confined to one test.
-- **Description summary:** Enhances `test_port_speed_change` to cover both downgrade and upgrade (was one direction) via parametrization, reworks DUT/port selection, decouples traffic-source DUT from the test DUT, adds multi-ASIC namespace context.
-- **Existing reviews/comments:** yejianquan (COMMENTED, non-blocking) credited real bug fixes and asked for test results + inline comments. anamehra asked about testbed setup. abdosi: master approach will move to no-patch-cleanup; 202405 needs a separate testcase.
-- **Matches description?:** **Partial** — parametrization/bidirectional coverage + DUT-selection rework match intent, but the diff also contains undisclosed changes (ACL enumeration from config_facts, `/localhost/` patch removal, wholesale PORT object replace, BUFFER_QUEUE cleanup, new split-patch `No.1b` flow). Real fixes but scope creep vs the description.
-- **Conflict likelihood:** Low — file-isolated.
-- **Duplication likelihood:** none seen.
-- **Reviewer notes:** abdosi flagged the master approach is still evolving → may be partially superseded; confirm direction. Wholesale PORT replace + split-patch ordering are the riskiest changes; requested test results not yet posted.
-- **Requested changes (to post):**
-  1. **Scope vs. description** — the diff goes well beyond "add parametrization": it also changes ACL enumeration (config_facts-driven), removes the `/localhost/` patch ops, does a wholesale PORT-object replace, adds BUFFER_QUEUE cleanup, and a new split-patch `No.1b` remove flow. Please either narrow the PR to the described change or update the description to cover everything — and split the unrelated fixes into their own PR(s) if practical.
-  2. **Confirm direction** — abdosi notes the master approach is moving away from remove-op patch cleanup and that 202405 needs a separate testcase; please confirm this isn't superseded before we invest further review.
-  3. **Test results** — post the run results yejianquan asked for and address the inline comments.
-  - Also: the PR-gate doesn't run this (`topology t2/lrh/urh`), so a t2 hardware pass is needed to validate the rewrite.
-
-[↑ back to recommendations](#deep-review-findings--sonic-netsonic-mgmt--2026-06-10)
-
-<a id="pr-24845"></a>
-
-### [PR #24845](https://github.com/sonic-net/sonic-mgmt/pull/24845) — ARS test script
-- **➡ Recommendation:** Request changes — fix live CodeQL regex + acl.json action/value mismatch, then marvell HW pass
-- **Author / affiliation:** apannerselva / Marvell Technology
-- **Trust:** Medium (Marvell)
-- **CI runs the test?:** No (marvell-teralynx)
-- **Type:** New test suite
-- **Complexity:** Medium — 7 files, +797/-1; new `tests/ecmp/ars/` package + ptf script; only shared touch is an additive block in `tests_mark_conditions.yaml`.
-- **Description summary:** New ARS (Adaptive Routing and Switching) suite implementing the ARS HLD test plan (SONiC#1958): per-packet/per-flowlet load balancing across NHG selector modes, an ACL "disable ARS" action, non-ARS behavior, and a stress test, with a new ptf dataplane test. T0-only, gated to Marvell-teralynx.
-- **Existing reviews/comments:** github-advanced-security[bot] raised many CodeQL findings (unused imports, two "unmatchable caret/dollar" regex warnings). radha-danda triggered `/azpw run`; author pinged reviewers. No human approval.
-- **Matches description?:** Yes — the 10 parametrized cases + marvell-teralynx gating match. Caveats: diff appears out of sync with some CodeQL-flagged symbols (post-scan cleanup), but unmatchable-regex findings still apply; `acl.json` defines action `DISABLE_ARS_FORWARDING` then sets it to `"DROP"` — looks semantically off.
-- **Conflict likelihood:** Low — additive overlap with #24545 only (different region of the yaml).
-- **Duplication likelihood:** none seen.
-- **Reviewer notes:** Needs a human pass: fix the live CodeQL regex warnings, confirm the `acl.json` action/value mismatch, verify unused-import findings actually resolved. Heavy `time.sleep` + full `config_reload` per case → slow/flaky-prone.
-- **Requested changes (to post):**
-  1. **CodeQL — unmatchable regex** — the anchored patterns in `verify_bgp_ecmp` / `has_ecmp_routes` have internal `^`/`$`, so they can never match; please fix them.
-  2. **Unused imports** — the diff looks out of sync with the CodeQL scan; confirm the flagged unused imports are actually removed.
-  3. **`acl.json` action/value mismatch** — it defines action `DISABLE_ARS_FORWARDING` but the rule sets it to `"DROP"`; please reconcile.
-  4. **Dead sleeps** — heavy `time.sleep` + a full `config_reload` per case is slow and flake-prone; gate on readiness (`wait_until`) where a signal exists rather than fixed sleeps.
-  - Also: the PR-gate doesn't run this (gated to marvell-teralynx), so a marvell-teralynx hardware pass is needed.
-
-[↑ back to recommendations](#deep-review-findings--sonic-netsonic-mgmt--2026-06-10)
 
 <a id="pr-18701"></a>
 
