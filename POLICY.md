@@ -211,9 +211,17 @@ elif CI == PENDING:                  -> no-op (a run is in flight; wait for next
     interval, 0, <predicate>)` helper (poll the actual readiness condition).
   - **Scope:** complain about sleeps the PR *adds or touches* (don't block an
     unrelated PR over a pre-existing one). A new dead sleep → `changes_requested`
-    with the suggested fix. **Narrow exception:** a tiny settle between two ops
-    that genuinely have *no* observable readiness signal — and only if commented;
-    default is to push back.
+    with the suggested fix.
+  - **Valid exception — no clean readiness signal.** When there is genuinely *no*
+    observable condition to poll (e.g. scheduling a forced reboot / SysRq, or
+    waiting on an external side-effect with no queryable state), a bounded fixed
+    delay is an acceptable, legitimate choice — **not** a hack. Don't push back on
+    those; just confirm it's bounded and ideally commented explaining why no
+    readiness check exists. Only flag sleeps where a real readiness signal *does*
+    exist and is being ignored (the chrony/`chronyc` case, a service/port/file/log
+    that could be polled, etc.). Example of the exception: #24545's pre-scheduled
+    SysRq-before-forced-reboot delay — there's nothing to poll before you crash the
+    box, and two maintainers accepted it; leave it.
   - **Reply template:** "This uses a fixed `<pause/sleep N>`, which is racy — it
     can be too short under load and wastes time otherwise. Please gate it on the
     actual readiness condition instead, e.g. `<until/retries or wait_until>`. Happy
