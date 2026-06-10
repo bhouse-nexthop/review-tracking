@@ -187,6 +187,22 @@ elif CI == PENDING:                  -> no-op (a run is in flight; wait for next
     function/line specifics, the exact fixes), so there's no gap between the doc
     and what the author receives. The index "Why" stays terse; the brief carries
     the full request.
+  - **Post requests as a formal, blocking "Request changes" review — not a plain
+    comment.** A change request, hardware-evidence request, or other-opinion ask
+    is submitted as a GitHub **Request changes** review so it is **blocking** and
+    must be **intentionally addressed or dismissed** by a reviewer — a plain
+    comment can be scrolled past and missed. Submit via the REST reviews endpoint
+    (`POST /repos/<repo>/pulls/<n>/reviews`, `event=REQUEST_CHANGES`); `gh pr
+    review --request-changes` works too but uses GraphQL, which gets throttled
+    first under load (prefer REST). Log it as `changes_requested` / `evidence_request`.
+- **Verify, don't punt — do the investigative work.** During review, **actually
+  check** anything determinable from the code/repo rather than leaving it as a
+  "verify X" note: does a referenced helper/symbol exist *and is it imported*; is a
+  cited source PR actually merged; does a dependency exist on the target branch;
+  does a claimed code path exist. Resolve it in the brief (e.g. "✓ `get_bbr_default_state`
+  is defined in `bgp_bbr_helpers.py` and imported at line 21 — fine"). Only defer
+  things genuinely undeterminable by us (real-hardware behavior, author intent).
+  An open "verify …" note that we *could* have checked is a review gap.
 - **Conflict/duplication seeding:** compute changed-file overlap across the
   eligible set deterministically; use that to seed fields 7–8, then reason over
   the diffs.

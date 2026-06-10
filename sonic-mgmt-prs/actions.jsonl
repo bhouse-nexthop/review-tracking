@@ -79,3 +79,12 @@
 {"pr": 24320, "action": "changes_requested", "date": "2026-06-10", "detail": "https://github.com/sonic-net/sonic-mgmt/pull/24320#issuecomment-4671952102", "ts": "2026-06-10T15:49:16Z"}
 {"pr": 24845, "action": "changes_requested", "date": "2026-06-10", "detail": "https://github.com/sonic-net/sonic-mgmt/pull/24845#issuecomment-4671952282", "ts": "2026-06-10T15:49:16Z"}
 {"pr": 18701, "action": "merge", "date": "2026-06-10", "detail": "squash (REST): Fix missing PSU fans in test_psu_fan.py port to 202411; backports Approved 202311/202405/202505", "ts": "2026-06-10T16:10:17Z"}
+{"pr": 24437, "action": "evidence_request", "date": "2026-06-10", "detail": "formal request-changes: hardware-pass evidence", "ts": "2026-06-10T16:58:09Z"}
+{"pr": 24787, "action": "evidence_request", "date": "2026-06-10", "detail": "formal request-changes: hardware-pass evidence", "ts": "2026-06-10T16:58:09Z"}
+{"pr": 24829, "action": "evidence_request", "date": "2026-06-10", "detail": "formal request-changes: hardware-pass evidence", "ts": "2026-06-10T16:58:09Z"}
+{"pr": 24884, "action": "evidence_request", "date": "2026-06-10", "detail": "formal request-changes: hardware-pass evidence", "ts": "2026-06-10T16:58:09Z"}
+{"pr": 24927, "action": "evidence_request", "date": "2026-06-10", "detail": "formal request-changes: hardware-pass evidence", "ts": "2026-06-10T16:58:09Z"}
+{"pr": 24930, "action": "evidence_request", "date": "2026-06-10", "detail": "formal request-changes: hardware-pass evidence", "ts": "2026-06-10T16:58:09Z"}
+{"pr": 25000, "action": "evidence_request", "date": "2026-06-10", "detail": "formal request-changes: hardware-pass evidence", "ts": "2026-06-10T16:58:09Z"}
+{"pr": 25040, "action": "evidence_request", "date": "2026-06-10", "detail": "formal request-changes: hardware-pass evidence", "ts": "2026-06-10T16:58:09Z"}
+{"pr": 25094, "action": "evidence_request", "date": "2026-06-10", "detail": "formal request-changes: hardware-pass evidence", "ts": "2026-06-10T16:58:09Z"}
