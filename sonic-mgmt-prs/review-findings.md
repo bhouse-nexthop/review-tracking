@@ -2,17 +2,17 @@
 
 **PRs awaiting our action**, sorted by recommendation — each links to its full brief (click → read → back → next). A PR drops off this doc once it's **approved/merged** or **handed back to the author** (changes/info/evidence requested, conflicting, COI-waiting); full state + history live in `actions.jsonl` + git. Recommendations fold in: does the diff match the description, complexity, **author trust** (§8.1), and **whether CI actually runs the test** (a green check on a skipped test proves nothing — see CI column). _Decision support; approval is the human reviewer's call._
 
-**Tally:** Approve: 3 · Get another opinion: 5 · Blocked (COI): 2  
+**Tally:** Approve: 2 · Get another opinion: 5 · Blocked (COI): 2  
+_(#23606 merged. #20001 → staleness ask; #18660 closed by author.)_
 _(#20001 → asked author to confirm it's not stale (xfail for swss#3498); #18660 closed by author.)_
 _(Newly reviewed this sweep; #18660 was closed by its author — superseded by #22982.)_
 _(Everything else this cycle is off-doc: 7 merged, 13 change/evidence requests out — all formal blocking Request-changes reviews. See actions.jsonl.)_
 _(Off-doc — awaiting author: #24247, #24320, #24845 (changes requested), #24975 (changes requested). Merged this cycle: #23930, #24493, #24545, #24597, #24876, #25134.)_
 
-## Approve (3)
+## Approve (2)
 
 | PR | Title | Type/Trust | CI runs test? | Why |
 |----|-------|-----------|---------------|-----|
-| [#23606](#pr-23606) | Add tests for static route removal after config reload | New test case / Expert | Yes (t0+dualtor) | CI-validated; minor optional note on a weak BGP-redistribution assertion |
 | [#24649](#pr-24649) | [dualtor] Add tunnel-termination drop test on standby ToR | New test suite / Expert | No (dualtor not in gate) | author linked real HW runs (Cisco 8101 + Arista) → evidence met; closes #21092 |
 | [#24687](#pr-24687) | pfcwd: ignore benign cisco-8000 SAI/orchagent errors | Bug fix (loganalyzer) / Expert | Partial (cisco-8000 branch not on vs) | additive asic-gated ignore-list, idiomatic, low risk |
 
@@ -169,24 +169,6 @@ _Ordered by recommendation, same as above._
 
 [↑ back to recommendations](#deep-review-findings--sonic-netsonic-mgmt--2026-06-10)
 
-
-<a id="pr-23606"></a>
-
-### [PR #23606](https://github.com/sonic-net/sonic-mgmt/pull/23606) — Add tests for static route removal after config reload (#18882)
-- **➡ Recommendation:** Approve (one optional note) — self-contained single-file test addition by a top-tier maintainer; all helpers verified present + imported; CI-gated on t0 and dualtor; addresses a real documented bug.
-- **Author / affiliation / trust:** yxieca (Ying Xie) / Microsoft (ying.xie@microsoft.com) / Expert (100+ merged)
-- **CI runs the test?:** Yes — `route/test_static_route.py` is in both the `t0` and `dualtor` gate blocks; new tests are pure CONFIG_DB + config-reload (VS-compatible), no platform skips.
-- **Type:** New test case (regression coverage)
-- **Complexity:** Med — +261 lines: three tests (IPv4/IPv6/blackhole) + one helper, reusing existing fixtures.
-- **Description summary:** Verifies that removing a static route from CONFIG_DB and running `config reload` clears it from the kernel/FIB; the blackhole case reproduces sonic-buildimage#21423.
-- **Existing reviews/comments:** No human reviews; only `/azp run` cycles.
-- **Matches description?:** Yes — AI-agent-assisted on behalf of yxieca (disclosed).
-- **Conflict likelihood:** Low — pure append to one file.
-- **Duplication likelihood:** none seen.
-- **Linked issue(s):** sonic-mgmt#18882 (open test-gap; partially addressed — no `Fixes` keyword, appropriate since #18882 also wants warmboot coverage) + references sonic-buildimage#21423.
-- **Reviewer notes:** Verified all reused helpers exist on master with matching signatures. Optional: `check_route_redistribution(removed=True)` is a near-no-op for non-redistributed static routes — consider asserting it was advertised before removal, or drop that step.
-
-[↑ back to recommendations](#deep-review-findings--sonic-netsonic-mgmt--2026-06-10)
 
 <a id="pr-24649"></a>
 
