@@ -2,19 +2,14 @@
 
 **PRs awaiting our action**, sorted by recommendation — each links to its full brief (click → read → back → next). A PR drops off this doc once it's **approved/merged** or **handed back to the author** (changes/info/evidence requested, conflicting, COI-waiting); full state + history live in `actions.jsonl` + git. Recommendations fold in: does the diff match the description, complexity, **author trust** (§8.1), and **whether CI actually runs the test** (a green check on a skipped test proves nothing — see CI column). _Decision support; approval is the human reviewer's call._
 
-**Tally:** Approve: 1 · Get another opinion: 5 · Blocked (COI): 2  
+**Tally:** Get another opinion: 5 · Blocked (COI): 2  
+_(#24687 merged. Off-doc awaiting author: #24649 (lolyu review), #20001 (staleness), + the earlier change/evidence requests. #18660 closed.)_
 _(#24649 → off-doc: unresolved maintainer review (lolyu: drop mocks/use toggle marks/add port stats) + CodeQL uninit-var — awaiting author. #23606 merged; #20001 staleness ask; #18660 closed.)_
 _(#23606 merged. #20001 → staleness ask; #18660 closed by author.)_
 _(#20001 → asked author to confirm it's not stale (xfail for swss#3498); #18660 closed by author.)_
 _(Newly reviewed this sweep; #18660 was closed by its author — superseded by #22982.)_
 _(Everything else this cycle is off-doc: 7 merged, 13 change/evidence requests out — all formal blocking Request-changes reviews. See actions.jsonl.)_
 _(Off-doc — awaiting author: #24247, #24320, #24845 (changes requested), #24975 (changes requested). Merged this cycle: #23930, #24493, #24545, #24597, #24876, #25134.)_
-
-## Approve (1)
-
-| PR | Title | Type/Trust | CI runs test? | Why |
-|----|-------|-----------|---------------|-----|
-| [#24687](#pr-24687) | pfcwd: ignore benign cisco-8000 SAI/orchagent errors | Bug fix (loganalyzer) / Expert | Partial (cisco-8000 branch not on vs) | additive asic-gated ignore-list, idiomatic, low risk |
 
 ## Get another opinion (5)
 
@@ -170,20 +165,3 @@ _Ordered by recommendation, same as above._
 [↑ back to recommendations](#deep-review-findings--sonic-netsonic-mgmt--2026-06-10)
 
 
-<a id="pr-24687"></a>
-
-### [PR #24687](https://github.com/sonic-net/sonic-mgmt/pull/24687) — pfcwd: ignore benign cisco-8000 SAI/orchagent errors during teardown of test_pfcwd_cli
-- **➡ Recommendation:** Approve — narrow, asic-gated loganalyzer ignore-list extension following the existing vs/KVM pattern in the same fixture; additive-only, zero behavior change on other platforms.
-- **Author / affiliation / trust:** wsycqyz (ShiyanWangMS) / Microsoft / Expert (100+ merged)
-- **CI runs the test?:** Partial — `test_pfcwd_cli.py` is in the gate so the fixture loads/parses, but the new `Cisco8000IgnoreRegex` branch is guarded by `asic_type == 'cisco-8000'`, which never matches on the vs gate — so the ignore behavior itself is hardware-only and not validated; green CI only confirms the existing path is unbroken.
-- **Type:** Bug fix (test reliability / loganalyzer false-positive suppression)
-- **Complexity:** Low — 1 file, +16/-0: a regex list + one conditional `extend`.
-- **Description summary:** On cisco-8000, `test_pfcwd_show_stat` passes but flags ERROR at teardown from a burst of benign syncd/orchagent ERR lines during LAG-member QoS rebind. Suppresses only those signatures, only on cisco-8000, mirroring the existing vs/KVM ignore pattern; root-cause orchagent fix tracked separately.
-- **Existing reviews/comments:** No human reviews; bot/automation only.
-- **Matches description?:** Yes — exactly the six regexes + cisco-8000-gated `extend`.
-- **Conflict likelihood:** Low — single fixture in one file.
-- **Duplication likelihood:** none seen.
-- **Linked issue(s):** none (`Fixes #` blank; a nightly testplan ID referenced, no GitHub issue).
-- **Reviewer notes:** Verified the asic-gated `ignore_regex.extend` pattern is idiomatic (matches existing vs/KVM/Tacacs blocks in this fixture). Minor: a couple of the regexes are somewhat generic, so they'd suppress those syncd lines for any test using this fixture on cisco-8000 — acceptable given the cisco-8000 + single-file scope.
-
-[↑ back to recommendations](#deep-review-findings--sonic-netsonic-mgmt--2026-06-10)

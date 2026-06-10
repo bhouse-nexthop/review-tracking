@@ -464,7 +464,13 @@ applying these rules.
     PR commit author metadata (fall back to the GitHub display name only if the
     commit email is a `users.noreply` address). If the author's signoff is
     already present, keep it; don't duplicate.
-  - **NEVER add a `Co-authored-by` line.** Strip any that GitHub would auto-add.
+  - **NEVER add a `Co-authored-by` line.** Strip any that GitHub would auto-add —
+    **including `Co-authored-by: Copilot`/bot trailers on AI-authored commits.** When
+    a commit is bot/AI-authored (author email is a Copilot/bot `users.noreply`), the
+    PR author is the accountable human: drop the bot co-author line and carry the PR
+    author's `Signed-off-by` (their commit email, or the GitHub `<id>+<login>@users.
+    noreply.github.com` fallback if none). Note in the approval summary that the
+    commit was AI-authored.
   - Do not invent test/verification claims.
 - **Rebase case:** each preserved commit keeps its own message + signoff; we
   don't rewrite individual commit messages (if one is inadequate, that's a
