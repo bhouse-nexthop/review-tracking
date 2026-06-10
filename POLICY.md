@@ -429,12 +429,19 @@ every PR resolves to `MERGEABLE`/`CONFLICTING`. Never act on `UNKNOWN`.
 
 ## 8. Author-affiliation resolution
 Resolve in this order; mark **"unknown"** (never guess) if none apply:
-1. GitHub profile `company` field.
-2. Verified public email domain.
-3. Login-suffix convention: `-nexthop`→NextHop, `-arista`→Arista,
+1. **SII author→org map** (authoritative, community-maintained):
+   `sonic-net/sonic-tsc` → `sii_author_map/author.csv` (`login,name,org`; `null`
+   = unknown). Cached locally at `data/author_org_map.csv`; refresh with
+   `gh api repos/sonic-net/sonic-tsc/contents/sii_author_map/author.csv --jq .content | base64 -d > data/author_org_map.csv`.
+2. GitHub profile `company` field.
+3. Verified public email domain.
+4. Login-suffix convention: `-nexthop`→NextHop, `-arista`→Arista,
    `-cisco`→Cisco, `-nv`/`-nvidia`→NVIDIA, `-ms`/`-msft`/`-microsoft`→Microsoft,
    `-nokia`→Nokia, `[Marvell]`/`-marvell`→Marvell, etc.
-4. Org membership.
+5. Org membership.
+
+The map doesn't cover everyone (e.g. NextHop authors and some newer logins are
+absent) — those still fall through to the profile/suffix heuristics.
 
 ## 9. The `/azp run` command
 Plain **`/azp run`** queues a *new* run of **all** repo pipelines (new run

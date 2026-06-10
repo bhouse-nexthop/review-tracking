@@ -13,6 +13,7 @@ Governed by [../POLICY.md](../POLICY.md).
 | `helpers/sweep.py` | The sweep tool (fetch → classify → ledger-gated plan → dry-run/apply → render table). |
 | `helpers/review_prompt.md` | The per-PR deep-review prompt template used to drive Rule 4 reviews. |
 | `data/` | Raw JSON/TSV snapshots from the last sweep (provenance/debug). |
+| `data/author_org_map.csv` | Cached SII author→org map (`sonic-net/sonic-tsc`), authoritative source for affiliation. Refresh: `gh api repos/sonic-net/sonic-tsc/contents/sii_author_map/author.csv --jq .content \| base64 -d > data/author_org_map.csv` |
 
 ## First sweep — 2026-06-10
 

@@ -155,23 +155,45 @@ def close_candidates(refs, merged_to_default=True):
 
 
 _affil_cache = {}
+_author_map = None
+AUTHOR_MAP_CSV = os.path.join(ROOT, "data", "author_org_map.csv")
+
+
+def load_author_map():
+    """SII author->org map (sonic-tsc); login(lowercase) -> org. 'null' filtered out.
+    Refresh: gh api repos/sonic-net/sonic-tsc/contents/sii_author_map/author.csv
+             --jq .content | base64 -d > data/author_org_map.csv"""
+    global _author_map
+    if _author_map is not None:
+        return _author_map
+    _author_map = {}
+    if os.path.exists(AUTHOR_MAP_CSV):
+        import csv
+        with open(AUTHOR_MAP_CSV, newline="") as f:
+            for row in csv.reader(f):
+                if len(row) >= 3 and row[0] and row[2] and row[2] != "null":
+                    _author_map[row[0].lower()] = row[2].strip()
+    return _author_map
 
 
 def affil_of(login):
-    """Resolve a login's affiliation (cached); profile company, else login suffix."""
+    """Resolve a login's affiliation (cached). Order: SII author->org map (authoritative)
+    -> GitHub profile company -> login-suffix heuristic -> unknown."""
     if not login:
         return "unknown"
     if login in _affil_cache:
         return _affil_cache[login]
-    d = gh_json(["api", f"users/{login}"]) or {}
-    a = affiliation(login, d.get("company"))
-    _affil_cache[login] = a
-    return a
+    org = load_author_map().get(login.lower())
+    if not org:
+        d = gh_json(["api", f"users/{login}"]) or {}
+        org = affiliation(login, d.get("company"))
+    _affil_cache[login] = org
+    return org
 
 
 def is_nexthop(login, affil=None):
-    a = affil or affil_of(login)
-    return a == "NextHop" or (login or "").lower().endswith("-nexthop")
+    a = (affil or affil_of(login) or "").lower()
+    return "nexthop" in a or (login or "").lower().endswith("-nexthop")
 
 
 def has_write_access(login):
