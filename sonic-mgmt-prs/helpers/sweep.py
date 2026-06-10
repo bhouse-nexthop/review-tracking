@@ -34,6 +34,7 @@ QUEUE_MD = os.path.join(ROOT, "review-queue.md")
 
 STALE_DAYS = 14
 ESCALATE_DAYS = 14
+NOTIFY_COOLDOWN_DAYS = 3   # don't re-notify the same failing PR within this window
 
 PING_TMPL = ("Hi @{author}, this PR currently has merge conflicts with the target "
              "branch. Could you confirm whether it's still relevant/active? If so, "
@@ -295,8 +296,10 @@ def classify_and_plan(detail, ledger):
                 row["action"] = "azp_run"; row["reason"] = "Rule 3: clean+failing, not yet retried"
             elif azp_ts < cmp_last:
                 # this failing run completed AFTER our /azp run -> the re-run failed
-                if notify_ts and notify_ts >= cmp_last:
-                    row["action"] = "none"; row["reason"] = "Rule 5: already notified this failing run"
+                notify_date = last_action_date(ledger, pr, "ci_fail_notify")
+                in_cooldown = notify_date and days_since(notify_date) < NOTIFY_COOLDOWN_DAYS
+                if (notify_ts and notify_ts >= cmp_last) or in_cooldown:
+                    row["action"] = "none"; row["reason"] = "Rule 5: already notified (or within cooldown)"
                 else:
                     row["action"] = "ci_fail_notify"; row["reason"] = "Rule 5: failed after our /azp run"
             else:
@@ -370,10 +373,12 @@ def commit_signoff_author(commits):
     return None, None
 
 
-def has_signoff(commits):
-    return all(re.search(r'^\s*Signed-off-by:', (c.get("messageBody") or ""), re.M)
-               or re.search(r'Signed-off-by:', (c.get("messageHeadline") or ""))
-               for c in commits) if commits else False
+def dco_status(checks):
+    """Authoritative sign-off signal: the repo's DCO check conclusion (or None)."""
+    for c in checks or []:
+        if (c.get("name") or c.get("context")) == "DCO":
+            return c.get("conclusion") or c.get("state")
+    return None
 
 
 def compose_squash_message(d, commits):
@@ -527,15 +532,17 @@ COMMIT_MSG_NOTICE = (
     "(a quick interactive rebase / amend) keeps things moving — thanks!")
 
 
-def commit_hygiene_issues(commits):
-    """Return a list of specific problems with a PR's commit messages, or []."""
+def commit_hygiene_issues(commits, dco):
+    """Return specific problems with a PR's commit messages, or [].
+    Sign-off compliance comes from the repo's DCO check (authoritative), NOT from
+    parsing commit bodies (gh under-reports trailers; merge commits lack signoff)."""
     problems = []
     weak = [c.get("messageHeadline", "") for c in commits
             if WEAK_MSG.match((c.get("messageHeadline") or "").strip())]
     if weak:
         problems.append(f"non-descriptive commit subject(s): {weak}")
-    if commits and not has_signoff(commits):
-        problems.append("missing Signed-off-by on one or more commits")
+    if dco == "FAILURE":
+        problems.append("DCO check failing (missing/invalid Signed-off-by)")
     return problems
 
 
@@ -547,7 +554,7 @@ def commit_hygiene_sweep(pr_list, ledger, apply):
         pr = d["number"]
         if any(e["pr"] == pr and e["action"] == "commit_msg_notice" for e in ledger):
             continue                                   # already notified (idempotent)
-        problems = commit_hygiene_issues(pr_commits(pr))
+        problems = commit_hygiene_issues(pr_commits(pr), dco_status(d.get("statusCheckRollup")))
         if not problems:
             continue
         if not apply:
@@ -565,22 +572,12 @@ def report_commit_hygiene():
     """Flag PRs whose commit messages are weak or missing Signed-off-by (Rule 9)."""
     lst = gh_json(["pr", "list", "--repo", REPO, "--search",
                    f"review-requested:{REVIEWER}", "--state", "open",
-                   "--json", "number,author", "--limit", "200"]) or []
+                   "--json", "number,author,statusCheckRollup", "--limit", "200"]) or []
     print(f"# Commit-message hygiene — {REPO} (Rule 9)\n")
     for d in sorted(lst, key=lambda x: -x["number"]):
-        commits = pr_commits(d["number"])
-        if not commits:
-            continue
-        weak = [c.get("messageHeadline", "") for c in commits
-                if WEAK_MSG.match((c.get("messageHeadline") or "").strip())]
-        nosign = not has_signoff(commits)
-        if weak or nosign:
-            flags = []
-            if weak:
-                flags.append(f"weak headline(s): {weak}")
-            if nosign:
-                flags.append("missing Signed-off-by")
-            print(f"#{d['number']} ({(d.get('author') or {}).get('login','?')}) — {'; '.join(flags)}")
+        problems = commit_hygiene_issues(pr_commits(d["number"]), dco_status(d.get("statusCheckRollup")))
+        if problems:
+            print(f"#{d['number']} ({(d.get('author') or {}).get('login','?')}) — {'; '.join(problems)}")
 
 
 def report_issue_linkage():
