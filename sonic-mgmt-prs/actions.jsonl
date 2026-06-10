@@ -68,3 +68,4 @@
 {"pr": 21658, "action": "deep_review", "date": "2026-06-10", "detail": "review-findings-2026-06-10.md (follow-up batch)", "ts": "2026-06-10T12:50:38Z"}
 {"pr": 19020, "action": "deep_review", "date": "2026-06-10", "detail": "review-findings-2026-06-10.md (follow-up batch)", "ts": "2026-06-10T12:50:38Z"}
 {"pr": 18701, "action": "deep_review", "date": "2026-06-10", "detail": "review-findings-2026-06-10.md (follow-up batch)", "ts": "2026-06-10T12:50:38Z"}
+{"pr": 24975, "action": "changes_requested", "date": "2026-06-10", "detail": "dead-sleep -> wait/until; https://github.com/sonic-net/sonic-mgmt/pull/24975#issuecomment-4671600699", "ts": "2026-06-10T15:00:11Z"}

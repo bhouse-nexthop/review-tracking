@@ -2,9 +2,9 @@
 
 **PRs awaiting our action**, sorted by recommendation — each links to its full brief (click → read → back → next). A PR drops off this doc once it's **approved/merged** or **handed back to the author** (changes/info/evidence requested, conflicting, COI-waiting); full state + history live in `actions.jsonl` + git. Recommendations fold in: does the diff match the description, complexity, **author trust** (§8.1), and **whether CI actually runs the test** (a green check on a skipped test proves nothing — see CI column). _Decision support; approval is the human reviewer's call._
 
-**Tally:** Approve: 7 · Request changes: 3 · Needs hardware-pass evidence: 10 · Get another opinion: 5 · Blocked (COI): 2
+**Tally:** Approve: 6 · Request changes: 3 · Needs hardware-pass evidence: 10 · Get another opinion: 5 · Blocked (COI): 2 · _Awaiting author (off-doc): #24975 (changes requested — dead sleep)_
 
-## Approve (7)
+## Approve (6)
 
 | PR | Title | Type/Trust | CI runs test? | Why |
 |----|-------|-----------|---------------|-----|
@@ -13,7 +13,6 @@
 | [#24545](#pr-24545) | Fix test_monitoring_critical_processes timeout… | Bug fix / Expert | Yes | CI-validated (runs on KVM); fixes a 365-day-dead test |
 | [#24597](#pr-24597) | Update the fanout switch deploy step due to la… | Bug fix / Expert | N-A (ansible infra) | ansible deploy-step fix; not pytest-gated; Expert NVIDIA author, low risk |
 | [#24876](#pr-24876) | lldp_syncd failure due to not enough converge … | Bug fix (flake) / Unproven | Yes | CI-validated; sound flake fix (author Unproven but CI covers it) |
-| [#24975](#pr-24975) | Fix the NTP polling step in deploy-mg playbook | Bug fix / Expert | N-A (ansible infra) | ansible deploy pause; not pytest-gated; Expert NVIDIA author, low risk |
 | [#25134](#pr-25134) | [conditional_mark]: Enable NTP IPv6-only manag… | Bug fix (enable) / Medium | Yes (confirm vpp job ran) | CI-validated on t1-lag-vpp; confirm that job triggered |
 
 ## Request changes (3)
@@ -154,25 +153,6 @@ _Ordered by recommendation, same as above._
 - **Duplication likelihood:** none seen.
 - **Reviewer notes:** Cosmetic nit: stability gate uses `stable_count > 2` (≈4 identical reads), more conservative than the "2 consecutive polls" the comment claims. Two approvals; sound flake fix.
 - **Suggested recommendation:** Approve — sound flake fix with two approvals; only a cosmetic comment/code nit
-
-[↑ back to recommendations](#deep-review-findings--sonic-netsonic-mgmt--2026-06-10)
-
-<a id="pr-24975"></a>
-
-### [PR #24975](https://github.com/sonic-net/sonic-mgmt/pull/24975) — Fix the NTP polling step in deploy-mg playbook
-- **➡ Recommendation:** Approve — ansible deploy pause; not pytest-gated; Expert NVIDIA author, low risk
-- **Author / affiliation:** congh-nvidia / NVIDIA
-- **Trust:** Expert (Nvidia)
-- **CI runs the test?:** N-A (ansible infra)
-- **Type:** Bug fix
-- **Complexity:** Low — 1 file, +4/-0; a single inserted Ansible `pause` task.
-- **Description summary:** `chronyc burst 4/4` right after a chrony restart can fail on slow platforms (e.g. SN2700-a0) because chrony isn't ready. Inserts a 3s `pause` before the forced-NTP-polling step.
-- **Existing reviews/comments:** nhe-NV — APPROVED.
-- **Matches description?:** Yes — exactly one `pause: seconds: 3` before the `chronyc burst` task.
-- **Conflict likelihood:** Low — file-isolated.
-- **Duplication likelihood:** none seen.
-- **Reviewer notes:** Clean. A fixed 3s pause is a band-aid vs a `wait_for` readiness loop, but low-risk and approved.
-- **Suggested recommendation:** Approve — small low-risk timing fix, approved by nhe-NV
 
 [↑ back to recommendations](#deep-review-findings--sonic-netsonic-mgmt--2026-06-10)
 

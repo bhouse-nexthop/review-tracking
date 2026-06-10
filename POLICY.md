@@ -199,6 +199,25 @@ elif CI == PENDING:                  -> no-op (a run is in flight; wait for next
   - **Does NOT qualify:** changes to shared test infra, common libraries, or
     behavior that affects other vendors' platforms — even from a vendor — still
     need a real hardware pass (or another validation path) before merge.
+- **Red flag — dead sleeps are a hack, not a fix.** Any *fixed, unconditional*
+  delay the PR adds — Ansible `pause`, `time.sleep(...)`, shell `sleep`, or a
+  hardcoded `delay`/timeout that isn't gated on a condition — is a race condition
+  waiting to happen (too short on a slow/loaded system, wasted time on a fast one).
+  **Always push back** with the concrete poll-until-ready alternative:
+  - *Ansible:* replace `pause` with `command/shell … register: r, until: <ready
+    cond>, retries: N, delay: S` — or simply add `until/retries/delay` to the very
+    operation that was flaking — or `wait_for` for a real port/file/log signal.
+  - *Python/pytest:* replace `time.sleep` with the repo's `wait_until(timeout,
+    interval, 0, <predicate>)` helper (poll the actual readiness condition).
+  - **Scope:** complain about sleeps the PR *adds or touches* (don't block an
+    unrelated PR over a pre-existing one). A new dead sleep → `changes_requested`
+    with the suggested fix. **Narrow exception:** a tiny settle between two ops
+    that genuinely have *no* observable readiness signal — and only if commented;
+    default is to push back.
+  - **Reply template:** "This uses a fixed `<pause/sleep N>`, which is racy — it
+    can be too short under load and wastes time otherwise. Please gate it on the
+    actual readiness condition instead, e.g. `<until/retries or wait_until>`. Happy
+    to re-review once it polls for readiness rather than sleeping."
 - **Affiliation-aware reviewing:** defer to the author's company on facts about
   that company's **own** hardware/platform/products. Do not raise questions an
   author from that vendor is authoritative on — e.g. don't ask a Juniper

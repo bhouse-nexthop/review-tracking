@@ -44,6 +44,11 @@ FAIL_TMPL = ("Hi @{author}, we re-triggered CI on this PR and it's still failing
              "Could you take a look at the latest run and address the failures? "
              "Once CI is green we'll proceed with review. Thanks!")
 AZP_BODY = "/azp run"
+# Rule 4 red flag — dead/fixed sleeps are racy; reply with the poll-until-ready fix.
+SLEEP_FIX_MSG = ("This uses a fixed `{what}`, which is racy — it can be too short under "
+                 "load (reintroducing the flake) and wastes time otherwise. Please gate it "
+                 "on the actual readiness condition instead (e.g. `{fix}`). Happy to "
+                 "re-review once it polls for readiness rather than sleeping. Thanks!")
 
 AFFIL_SUFFIX = {"-nexthop": "NextHop", "-arista": "Arista", "-cisco": "Cisco",
                 "-nvidia": "NVIDIA", "-nv": "NVIDIA", "-msft": "Microsoft",
