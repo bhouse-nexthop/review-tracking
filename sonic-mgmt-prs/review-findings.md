@@ -2,14 +2,19 @@
 
 **PRs awaiting our action**, sorted by recommendation — each links to its full brief (click → read → back → next). A PR drops off this doc once it's **approved/merged** or **handed back to the author** (changes/info/evidence requested, conflicting, COI-waiting); full state + history live in `actions.jsonl` + git. Recommendations fold in: does the diff match the description, complexity, **author trust** (§8.1), and **whether CI actually runs the test** (a green check on a skipped test proves nothing — see CI column). _Decision support; approval is the human reviewer's call._
 
-**Tally:** Needs hardware-pass evidence: 10 · Get another opinion: 5 · Blocked (COI): 2  
+**Tally:** Approve: 1 · Needs hardware-pass evidence: 9 · Get another opinion: 5 · Blocked (COI): 2  
 _(Off-doc — awaiting author: #24247, #24320, #24845 (changes requested), #24975 (changes requested). Merged this cycle: #23930, #24493, #24545, #24597, #24876, #25134.)_
 
-## Needs hardware-pass evidence (10)
+## Approve (1)
 
 | PR | Title | Type/Trust | CI runs test? | Why |
 |----|-------|-----------|---------------|-----|
-| [#18701](#pr-18701) | Fix missing PSU fans in test_psu_fan.py port t… | Backport (bugfix) / Low | No (api not in gate) | PSU api not in gate; faithful backport of merged #17641 (lower risk) |
+| [#18701](#pr-18701) | Fix missing PSU fans in test_psu_fan.py port to 202411 | Backport (bugfix) / Low | No (api not in gate) | **verified backport** of merged #17641 (same files; deps exist on 202411) → no HW pass needed |
+
+## Needs hardware-pass evidence (9)
+
+| PR | Title | Type/Trust | CI runs test? | Why |
+|----|-------|-----------|---------------|-----|
 | [#24437](#pr-24437) | save pfcwd_timer_accuracy test result to file | Feature (diag) / Medium | Partial (vs early-return) | shared pfcwd test; changed save-path unreached on vs |
 | [#24787](#pr-24787) | [platform_tests][T2] Add test_sup_fan_recovery… | New test suite / Medium | No (t2 chassis) | new T2 chassis test; hardware-only; no human review yet |
 | [#24829](#pr-24829) | Fix: add port name for acl interface parsing | Bug fix / High | No (fix branch not hit on vs) | shared minigraph lib; new ACL branch only hit on hardware |
@@ -46,7 +51,7 @@ _Ordered by recommendation, same as above._
 <a id="pr-18701"></a>
 
 ### [PR #18701](https://github.com/sonic-net/sonic-mgmt/pull/18701) — Fix missing PSU fans in test_psu_fan.py port to 202411
-- **➡ Recommendation:** Needs hardware-pass evidence — PSU api not in gate; faithful backport of merged #17641 (lower risk)
+- **➡ Recommendation:** Approve — **verified backport** of already-merged #17641 (verified-backport exception → no hardware pass needed)
 - **Author / affiliation:** eyakubch / **unknown** (empty profile company, no org suffix)
 - **Trust:** Low (unknown)
 - **CI runs the test?:** No (api not in gate)
@@ -58,7 +63,8 @@ _Ordered by recommendation, same as above._
 - **Conflict likelihood:** Low — targets release branch `202411`, isolated to PSU API tests; sibling backports go to other branches.
 - **Duplication likelihood:** none — legitimate backport of #17641, not a dup.
 - **Linked issue(s):** none closeable — references master PR #17641 (a PR); `Fixes #` blank.
-- **Reviewer notes:** Faithful to master; minor PEP8 nit (blank lines before the new module-level function) and conftest-as-importable-module pattern (matches master). PSU hardware isn't author-specific.
+- **Backport verification:** ✓ source #17641 is MERGED (base master, same title); ✓ same 3 files (conftest.py, test_psu.py, test_psu_fans.py); ✓ no newer-only dependency — `get_skip_mod_list`/`skip_absent_psu`/`psu_skip_list` already exist on the 202411 branch. Qualifies for the verified-backport exception → no hardware pass required.
+- **Reviewer notes:** Faithful to master; only a minor PEP8 nit (blank lines before the new module-level function). PSU hardware isn't author-specific.
 - **Suggested recommendation:** Approve — low-risk faithful backport of an already-merged fix, isolated to a release branch.
 
 [↑ back to recommendations](#deep-review-findings--sonic-netsonic-mgmt--2026-06-10)

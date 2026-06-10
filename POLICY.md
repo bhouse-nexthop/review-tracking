@@ -204,6 +204,21 @@ elif CI == PENDING:                  -> no-op (a run is in flight; wait for next
     (e.g. Juniper → TH5 so an existing test runs) **and** *a new/modified test
     scoped only to that vendor's hardware*. We should trust vendors modifying
     things that only affect their own equipment, absent review red flags.
+  - **Verified-backport exception (no evidence required).** A PR that claims to be
+    a backport of an already-merged PR can skip the hardware pass **once we verify
+    the claim** — never take "it's a backport" on faith. Verify all of:
+    **(a)** the cited source PR actually exists and is **MERGED**;
+    **(b)** this PR is genuinely that change (file/diff parity — a cherry-pick of
+    the same edits, not something else hiding under a backport label);
+    **(c)** it does **not** rely on functionality introduced only in a newer
+    version — everything it depends on (helpers, APIs, fixtures) must already exist
+    on the **target** branch, or the backport is invalid.
+    If all hold, the change was already reviewed+validated on master, so we approve
+    + merge without a fresh hardware run. If any fails (source not merged, diff
+    diverges, or it pulls in newer-only functionality), treat it as a normal change
+    (needs evidence / deeper review). Record the verification in the approval
+    summary. *(Example: #18701 — verified backport of merged #17641; same 3 files;
+    `get_skip_mod_list`/`skip_absent_psu` already present on 202411 → no HW pass.)*
   - **Does NOT qualify:** changes to shared test infra, common libraries, or
     behavior that affects other vendors' platforms — even from a vendor — still
     need a real hardware pass (or another validation path) before merge.
