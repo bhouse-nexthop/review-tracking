@@ -1,0 +1,850 @@
+{
+ "prs": {
+  "23930": {
+   "num": 23930,
+   "title": "Update variables",
+   "login": "SaiYasaswiniP",
+   "affil": "Juniper Networks",
+   "affil_src": "profile",
+   "add": 2,
+   "dele": 2,
+   "nfiles": 1,
+   "files": [
+    "ansible/group_vars/sonic/variables"
+   ],
+   "body": "adding juniper broadcom supported hwsku\r\n\r\n<!--\r\nPlease make sure you've read and understood our contributing guidelines;\r\nhttps://github.com/sonic-net/SONiC/blob/gh-pages/CONTRIBUTING.md\r\n\r\nPlease provide following information to help code review process a bit easier:\r\n-->\r\n### Description of PR\r\n<!--\r\n- Please include a summary of the change and which issue is fixed.\r\n- Please also include relevant motivation and context. Where should reviewer start? background context?\r\n- List any dependencies that are required for this change.\r\n-->\r\n\r\nSummary:\r\nFixes # (issue)\r\n\r\n### Type of change\r\n\r\n<!--\r\n- Fill x for your type of change.\r\n- e.g.\r\n- [x] Bug fix\r\n-->\r\n\r\n- [ ] Bug fix\r\n- [x] Testbed and Framework(new/improvement)\r\n- [ ] New Test case\r\n    - [ ] Skipped for non-supported platforms\r\n- [ ] Test case improvement\r\n\r\n\r\n### Back port request\r\n- [ ] 202205\r\n- [ ] 202305\r\n- [ ] 202311\r\n- [ ] 202405\r\n- [ ] 202411\r\n- [ ] 202505\r\n- [ ] 202511\r\n\r\n### Approach\r\n#### What is the motivation for this PR?\r\n\r\n#### How did you do it?\r\n\r\n#### How did you verify/test it?\r\n\r\n#### Any platform specific information?\r\n\r\n#### Supported testbed topology if it's a new test case?\r\n\r\n### Documentation\r\n<!--\r\n(If it's a new feature, new test case)\r\nDid you update documentation/Wiki relevant to your implementation?\r\nLink to the wiki page?\r\n-->\r\n",
+   "reviews": [],
+   "comments": [
+    {
+     "who": "linux-foundation-easycla",
+     "body": "<a href=\"https://easycla.lfx.linuxfoundation.org/#/?version=2\"><img src=\"https://s3.amazonaws.com/cla-project-logo-prod/cla-signed.svg?v=2\" alt=\"CLA Signed\" align=\"left\" height=\"28\" width=\"328\" ></a><br/><br />The committers listed above are authorized under a signed CLA.<ul><li>:white_check_mark: l"
+    },
+    {
+     "who": "yxieca",
+     "body": "@SaiYasaswiniP please address the pre-test failure."
+    },
+    {
+     "who": "SaiYasaswiniP",
+     "body": "The pre-test failure is a permission error for /agent/_work/3/s/.pytest_cache/README.md and /agent/_work/3/s/.pytest_cache/.gitignore files. These permission errors are unrelated to the hwsku addition to the file. Can we please schedule a re-run of the test?"
+    },
+    {
+     "who": "yijingyan2",
+     "body": "/azp run"
+    },
+    {
+     "who": "SaiYasaswiniP",
+     "body": "The failure is not related to this PR, please rerun"
+    },
+    {
+     "who": "yijingyan2",
+     "body": "/azpw retry"
+    },
+    {
+     "who": "vmittal-msft",
+     "body": "@SaiYasaswiniP please add master pr. Also, please update title to be more descriptive as well as more detail in Description section."
+    }
+   ],
+   "createdAt": "2026-04-15T06:58:21Z"
+  },
+  "24320": {
+   "num": 24320,
+   "title": "changes for port speed test enhancement",
+   "login": "rawal01",
+   "affil": "nokia",
+   "affil_src": "profile",
+   "add": 257,
+   "dele": 111,
+   "nfiles": 1,
+   "files": [
+    "tests/generic_config_updater/add_cluster/test_port_speed_change.py"
+   ],
+   "body": "<!--\r\nPlease make sure you've read and understood our contributing guidelines;\r\nhttps://github.com/sonic-net/SONiC/blob/gh-pages/CONTRIBUTING.md\r\n\r\nPlease provide following information to help code review process a bit easier:\r\n-->\r\n### Description of PR\r\nEnhance the test to cover both lower speed from higher speed and also higher speed from lower\r\n\r\nSummary:\r\nFixes # https://github.com/sonic-net/sonic-mgmt/issues/23585\r\n\r\n### Type of change\r\n\r\n<!--\r\n- Fill x for your type of change.\r\n- e.g.\r\n- [x] Bug fix\r\n-->\r\n\r\n- [ ] Bug fix\r\n- [ ] Testbed and Framework(new/improvement)\r\n- [ ] New Test case\r\n    - [ ] Skipped for non-supported platforms\r\n- [ x] Test case improvement\r\n\r\n\r\n### Back port request\r\n- [ ] 202205\r\n- [ ] 202305\r\n- [ ] 202311\r\n- [ ] 202405\r\n- [ ] 202411\r\n- [ ] 202505\r\n- [ ] 202511\r\n\r\n### Approach\r\n#### What is the motivation for this PR?\r\n\r\n#### How did you do it?\r\nAdd parametrization to test to  now have both scenarios for lower and higher port speed\r\nChange selection of dut to check both upstream and downstream to run both scenarios\r\nTo support both upgrade/ downgrade of speed assumption is both port type is already part of current deployed topology.\r\n\r\n#### How did you verify/test it?\r\n\r\n#### Any platform specific information?\r\n\r\n#### Supported testbed topology if it's a new test case?\r\nT2\r\n### Documentation\r\n<!--\r\n(If it's a new feature, new test case)\r\nDid you update documentation/Wiki relevant to your implementation?\r\nLink to the wiki page?\r\n-->\r\n",
+   "reviews": [
+    {
+     "who": "yejianquan",
+     "state": "COMMENTED",
+     "body": ""
+    }
+   ],
+   "comments": [
+    {
+     "who": "anamehra",
+     "body": "Is there any special requirement considerationon the test setup to have both type of speed supported on ports? If so, please suggest in description. Thanks"
+    },
+    {
+     "who": "rawal01",
+     "body": "> Is there any special requirement considerationon the test setup to have both type of speed supported on ports? If so, please suggest in description. Thanks\r\n\r\nYes there is platform_constants file to get supported speeds"
+    },
+    {
+     "who": "abdosi",
+     "body": "@yejianquan Please help sign-off this.\r\n\r\n@anamehra to review this."
+    },
+    {
+     "who": "yejianquan",
+     "body": "Hi @rawal01 , thanks for the bug fixes \u2014 the ACL enumeration, the /localhost/ cleanup, the\r\nPORT wholesale-replace, and the BUFFER_QUEUE\r\ncleanup are all real and well-spotted.\r\n\r\nLeft some comments, and please share the test results"
+    },
+    {
+     "who": "abdosi",
+     "body": "PR still in progress to handle new approach that does not need patch cleanup using remove operation. That would be for master.\r\n\r\nFor 202405 we will need seprate testcase. Also this test might be more align towards voq chassis .\r\n\r\n@anamehra : can you have separate test case for 202405 for packet-ch"
+    }
+   ],
+   "createdAt": "2026-04-29T16:59:48Z"
+  },
+  "24437": {
+   "num": 24437,
+   "title": "save pfcwd_timer_accuracy test result to file",
+   "login": "wenjwang-nv",
+   "affil": "NVIDIA",
+   "affil_src": "login-suffix",
+   "add": 56,
+   "dele": 1,
+   "nfiles": 2,
+   "files": [
+    "tests/pfcwd/conftest.py",
+    "tests/pfcwd/test_pfcwd_timer_accuracy.py"
+   ],
+   "body": "<!--\r\nPlease make sure you've read and understood our contributing guidelines;\r\nhttps://github.com/sonic-net/SONiC/blob/gh-pages/CONTRIBUTING.md\r\n\r\nPlease provide following information to help code review process a bit easier:\r\n-->\r\n### Description of PR\r\n<!--\r\n- Please include a summary of the change and which issue is fixed.\r\n- Please also include relevant motivation and context. Where should reviewer start? background context?\r\n- List any dependencies that are required for this change.\r\n-->\r\n\r\nSummary:\r\n\r\nSave the pfcwd_timer_accuracy test result to a file for later data analyzing, help design team to know the difference between max/min detect/restore time in single test and trend during several times of test.\r\n\r\n### Type of change\r\n\r\n<!--\r\n- Fill x for your type of change.\r\n- e.g.\r\n- [x] Bug fix\r\n-->\r\n\r\n- [ ] Bug fix\r\n- [ ] Testbed and Framework(new/improvement)\r\n- [ ] New Test case\r\n    - [ ] Skipped for non-supported platforms\r\n- [ ] Test case improvement\r\n\r\n\r\n### Back port request\r\n- [ ] 202205\r\n- [ ] 202305\r\n- [ ] 202311\r\n- [ ] 202405\r\n- [ ] 202411\r\n- [ ] 202505\r\n- [ ] 202511\r\n\r\n### Approach\r\n#### What is the motivation for this PR?\r\nTo get trackable record for further analyzing about detect/restore time in pfcwd_timer_accuracy test\r\n\r\n#### How did you do it?\r\nSave needed date to a file for later use\r\n\r\n#### How did you verify/test it?\r\n\r\n#### Any platform specific information?\r\n\r\n#### Supported testbed topology if it's a new test case?\r\n\r\n### Documentation\r\n<!--\r\n(If it's a new feature, new test case)\r\nDid you update documentation/Wiki relevant to your implementation?\r\nLink to the wiki page?\r\n-->\r\n",
+   "reviews": [
+    {
+     "who": "nhe-NV",
+     "state": "COMMENTED",
+     "body": ""
+    },
+    {
+     "who": "wenjwang-nv",
+     "state": "COMMENTED",
+     "body": ""
+    },
+    {
+     "who": "wenjwang-nv",
+     "state": "COMMENTED",
+     "body": ""
+    },
+    {
+     "who": "nhe-NV",
+     "state": "APPROVED",
+     "body": ""
+    }
+   ],
+   "comments": [
+    {
+     "who": "wenjwang-nv",
+     "body": "/azpw run"
+    }
+   ],
+   "createdAt": "2026-05-07T07:01:59Z"
+  },
+  "24493": {
+   "num": 24493,
+   "title": "Update the gNMI setup without authentication for liquid cooling case",
+   "login": "JibinBao",
+   "affil": "nvidia",
+   "affil_src": "profile",
+   "add": 2,
+   "dele": 10,
+   "nfiles": 1,
+   "files": [
+    "tests/common/helpers/liquid_leakage_control_test_helper.py"
+   ],
+   "body": "<!--\r\nPlease make sure you've read and understood our contributing guidelines;\r\nhttps://github.com/sonic-net/SONiC/blob/gh-pages/CONTRIBUTING.md\r\n\r\nPlease provide following information to help code review process a bit easier:\r\n-->\r\n### Description of PR\r\n<!--\r\n- Please include a summary of the change and which issue is fixed.\r\n- Please also include relevant motivation and context. Where should reviewer start? background context?\r\n- List any dependencies that are required for this change.\r\n-->\r\nUpdate the gNMI setup without authentication to simplify the test logic. We do not need to validate gNMI authentication; we only need to verify that the gNMI message is triggered and received.\r\n\r\nPreviously, we used a workaround for gNMI authentication to test on chipless BU\uff08syncd and swss will be disabled due to no asic. Later, we found that py_gnmicli.py provides a parameter to skip authentication, so we updated it. As a result, this change works for both chipless and normal setups.\r\n\r\nTest coverage for gnmi authentication is not impacted, since there are already multiple test cases (such as test_gnmi.py)that cover gNMI authentication.\r\n\r\nSummary:\r\nFixes # (issue)\r\n\r\n### Type of change\r\n\r\n<!--\r\n- Fill x for your type of change.\r\n- e.g.\r\n- [x] Bug fix\r\n-->\r\n\r\n- [x] Bug fix\r\n- [ ] Testbed and Framework(new/improvement)\r\n- [ ] New Test case\r\n    - [ ] Skipped for non-supported platforms\r\n- [ ] Test case improvement\r\n\r\n\r\n### Back port request\r\n- [ ] 202205\r\n- [ ] 202305\r\n- [ ] 202311\r\n- [ ] 202405\r\n- [ ] 202411\r\n- [ ] 202505\r\n- [ ] 202511\r\n\r\n### Approach\r\n#### What is the motivation for this PR?\r\nUpdate the gNMI setup without authentication for liquid cooling case to simplify the test logic. \r\n\r\n#### How did you do it?\r\nwhen call py_gnmicli.py, add parameter '-n'\r\n\r\n#### How did you verify/test it?\r\nrun the liquid cooling test \r\n\r\n#### Any platform specific information?\r\nplatform supporting liquid cooling\r\n\r\n#### Supported testbed topology if it's a new test case?\r\nAny\r\n\r\n### Documentation\r\n<!--\r\n(If it's a new feature, new test case)\r\nDid you update documentation/Wiki relevant to your implementation?\r\nLink to the wiki page?\r\n-->\r\n",
+   "reviews": [
+    {
+     "who": "nhe-NV",
+     "state": "APPROVED",
+     "body": ""
+    }
+   ],
+   "comments": [],
+   "createdAt": "2026-05-09T02:07:09Z"
+  },
+  "24545": {
+   "num": 24545,
+   "title": "Fix test_monitoring_critical_processes timeout by killing database container last",
+   "login": "xwjiang-ms",
+   "affil": "Microsoft",
+   "affil_src": "profile",
+   "add": 164,
+   "dele": 45,
+   "nfiles": 2,
+   "files": [
+    "tests/common/plugins/conditional_mark/tests_mark_conditions.yaml",
+    "tests/process_monitoring/test_critical_process_monitoring.py"
+   ],
+   "body": "### Description of PR\r\n\r\nFix `test_monitoring_critical_processes` persistent timeout failures on baseline tests across all topologies (t0, t1-lag, t1-8-lag).\r\n\r\n**Root cause**: PR #21889 removed `database` from the skip list in `get_skip_containers()`, adding it to the critical process kill list. Killing redis in the database container destabilizes the entire DUT (config DB becomes empty). When `stop_critical_processes()` iterates containers alphabetically, `database` is killed early, and subsequent SSH calls to kill remaining containers either hang forever or fail with EOF. In baseline tests, SSH hangs cause pytest to be killed by the external timeout, producing \"Test failed and no xml file created\".\r\n\r\n**Fix**: Two-phase approach in `test_monitoring_critical_processes()`:\r\n- **Phase 1** - Kill all non-database critical processes, wait for syslog alerting messages, and verify them via loganalyzer. SSH remains alive because database is untouched.\r\n- **Phase 2** - Kill database critical processes **last**. The DUT will become unstable, so syslog verification is skipped for database. The existing `recover_critical_processes` fixture handles DUT recovery via SysRq reboot (KVM) or PDU power-cycle (physical).\r\n\r\nAlso removes the `xfail` conditional mark entry for this test (sonic-buildimage#10336) since the test now passes reliably.\r\n\r\nSummary:\r\n\r\n### Type of change\r\n\r\n- [x] Bug fix\r\n- [ ] Testbed and Framework(new/improvement)\r\n- [ ] New Test case\r\n    - [ ] Skipped for non-supported platforms\r\n- [ ] Test case improvement\r\n\r\n### Back port request\r\n- [ ] 202205\r\n- [ ] 202305\r\n- [ ] 202311\r\n- [ ] 202405\r\n- [ ] 202411\r\n- [ ] 202505\r\n- [ ] 202511\r\n\r\n### Approach\r\n#### What is the motivation for this PR?\r\nThe test has been failing 100% of the time on baseline tests since PR #21889 was merged (2026-01-10). Kusto analysis shows 0 passes in 365 days across all topologies with 257+ consecutive failures in 30 days. The failure mechanism is:\r\n1. `stop_critical_processes()` kills containers alphabetically: bgp -> bmp -> **database** -> dhcp_relay -> ...\r\n2. Killing redis in database destabilizes the DUT (config DB emptied)\r\n3. SSH hangs on subsequent container kills\r\n4. Pytest is killed by external timeout -> no XML output -> \"Test failed and no xml file created\"\r\n\r\n#### How did you do it?\r\nSplit the kill sequence in `test_monitoring_critical_processes()` into two phases:\r\n1. Kill non-database containers first (SSH stable) -> verify syslog alerts via loganalyzer\r\n2. Kill ",
+   "reviews": [
+    {
+     "who": "StormLiangMS",
+     "state": "COMMENTED",
+     "body": "## Verdict\n**LGTM with minor questions.** The root cause analysis is convincing, and the two-phase fix is the right shape. The change is focused and the recovery path is genuinely more robust. A few items worth tightening before merge.\n\n## Strengths\n- **RCA is precise:** alphabetical iteration \u2192 `da"
+    },
+    {
+     "who": "StormLiangMS",
+     "state": "DISMISSED",
+     "body": "## Verdict\r\n**Approved.** All 5 substantive items + 4 nits from my prior review (2026-05-14) are addressed in commit `98a99ca`, and Lipxu's multi-ASIC filter fix landed in `121628c8`. The new commit `d8834cb` rewrote the recovery path to wait for `database_config.json` and then call `config_reload(s"
+    },
+    {
+     "who": "lipxu",
+     "state": "DISMISSED",
+     "body": ""
+    },
+    {
+     "who": "xwjiang-ms",
+     "state": "COMMENTED",
+     "body": "## Code Review\n\nThe root cause analysis is solid and the two-phase approach is the right fix. All CI checks pass. A few issues worth addressing:\n\n---\n\n### \ud83d\udd34 Issues\n\n**1. Hard-coded SysRq delay for multi-ASIC VS is fragile**\n\n```python\nreboot_delay = 120  # seconds -- generous to allow per-ASIC kills"
+    },
+    {
+     "who": "xwjiang-ms",
+     "state": "COMMENTED",
+     "body": "## Final Review Summary\n\nReviewed the comments from the other reviewer. VS skip removal is fine (CI passes on all VS topologies). Here is my evaluation of all outstanding items:\n\n---\n\n### Must Fix Before Merge\n\n**#1 Race: SysRq timer starts before per-ASIC kills** \u2014 Valid, critical.\nThe 120s countdo"
+    },
+    {
+     "who": "ZhaohuiS",
+     "state": "DISMISSED",
+     "body": "Well-structured two-phase approach - killing non-database containers first for syslog verification, then database last with proper multi-ASIC VS handling. The pre-scheduled SysRq before global DB kill is the right pattern since SSH dies immediately after on multi-ASIC. Waiting for database_config.js"
+    }
+   ],
+   "comments": [
+    {
+     "who": "lipxu",
+     "body": "**Issue 1 \u2014 Multi-ASIC: `k == \"database\"` filter misses per-ASIC database containers**\n\n```python\ndatabase_containers = {k: v for k, v in containers_in_namespaces.items() if k == \"database\"}\n```\n\nOn multi-ASIC DUTs, per-ASIC database containers are named `database0`, `database1`, etc. These do not m"
+    },
+    {
+     "who": "xwjiang-ms",
+     "body": "> **Issue 1 \u2014 Multi-ASIC: `k == \"database\"` filter misses per-ASIC database containers**\r\n> \r\n> ```python\r\n> database_containers = {k: v for k, v in containers_in_namespaces.items() if k == \"database\"}\r\n> ```\r\n> \r\n> On multi-ASIC DUTs, per-ASIC database containers are named `database0`, `database1`,"
+    },
+    {
+     "who": "xwjiang-ms",
+     "body": "@StormLiangMS Thanks for the thorough review! Addressed in commit 98a99ca:\r\n\r\n**Substantive items:**\r\n\r\n| # | Item | Resolution |\r\n|---|------|-----------|\r\n| 1 | `KVM_PLATFORM` -> `is_vs_device` broadening | Intentional -- `is_vs_device` correctly covers all VS-backed images where PDU is unavailabl"
+    },
+    {
+     "who": "yxieca",
+     "body": "Review note (non-blocking):\n- Potential test skip/xfail logic added; please confirm necessity.\n\nAI agent on behalf of Ying.\n\n<!-- AI_AGENT_REVIEW:98a99ca045be8c9aaa688f7a6a69aff280f0485f -->"
+    },
+    {
+     "who": "linux-foundation-easycla",
+     "body": "<a href=\"https://easycla.lfx.linuxfoundation.org/#/?version=2\"><img src=\"https://s3.amazonaws.com/cla-project-logo-prod/cla-signed.svg?v=2\" alt=\"CLA Signed\" align=\"left\" height=\"28\" width=\"328\" ></a><br >The committers listed above are authorized under a signed CLA.<ul><li>:white_check_mark: login: "
+    },
+    {
+     "who": "xwjiang-ms",
+     "body": "/azp run"
+    },
+    {
+     "who": "StormLiangMS",
+     "body": "hi @xwjiang-ms could you check the SA failure?"
+    },
+    {
+     "who": "xwjiang-ms",
+     "body": "> hi @xwjiang-ms could you check the SA failure?\r\n\r\n@StormLiangMS all checks passed, could you help to review again?"
+    }
+   ],
+   "createdAt": "2026-05-12T06:48:19Z"
+  },
+  "24597": {
+   "num": 24597,
+   "title": "Update the fanout switch deploy step due to lack of /etc/sysctl.conf",
+   "login": "echuawu",
+   "affil": "Nvidia Networking",
+   "affil_src": "profile",
+   "add": 215,
+   "dele": 1,
+   "nfiles": 2,
+   "files": [
+    "ansible/roles/fanout/tasks/fanout_sonic.yml",
+    "ansible/roles/fanout/tasks/sonic/fanout_sonic_202511.yml"
+   ],
+   "body": "\r\n\r\n<!--\r\nPlease make sure you've read and understood our contributing guidelines;\r\nhttps://github.com/sonic-net/SONiC/blob/gh-pages/CONTRIBUTING.md\r\n\r\nPlease provide following information to help code review process a bit easier:\r\n-->\r\n### Description of PR\r\nUpdate the fanout switch deploy step due to the update of sonic linux version\r\nCurrently there is no /etc/sysctl.conf, the configuration of ipv6 had been moved to /usr/lib/sysctl.d/90-sonic.conf\r\n\r\nSummary:\r\nFixes # (issue)\r\n\r\n### Type of change\r\n\r\n<!--\r\n- Fill x for your type of change.\r\n- e.g.\r\n- [x] Bug fix\r\n-->\r\n\r\n- [x] Bug fix\r\n- [ ] Testbed and Framework(new/improvement)\r\n- [ ] New Test case\r\n    - [ ] Skipped for non-supported platforms\r\n- [ ] Test case improvement\r\n\r\n\r\n### Back port request\r\n- [ ] 202205\r\n- [ ] 202305\r\n- [ ] 202311\r\n- [ ] 202405\r\n- [ ] 202411\r\n- [ ] 202505\r\n- [x] 202511\r\n\r\n### Approach\r\n#### What is the motivation for this PR?\r\nThe SONiC fanout switch deployment is failing due to ansible step \"Update IPv6 parameter\" failure\r\n#### How did you do it?\r\nUpdate the fanout switch deploy step due to the update of sonic linux version\r\nCurrently there is no /etc/sysctl.conf, the configuration of ipv6 had been moved to /usr/lib/sysctl.d/90-sonic.conf.\r\nAs a result, a dedicate yaml file for branch 202511 had been added.\r\n#### How did you verify/test it?\r\nDeploy the SONiC fanout switch on 202511 image\r\n#### Any platform specific information?\r\n\r\n#### Supported testbed topology if it's a new test case?\r\n\r\n### Documentation\r\n<!--\r\n(If it's a new feature, new test case)\r\nDid you update documentation/Wiki relevant to your implementation?\r\nLink to the wiki page?\r\n-->\r\n",
+   "reviews": [
+    {
+     "who": "nhe-NV",
+     "state": "DISMISSED",
+     "body": ""
+    },
+    {
+     "who": "nhe-NV",
+     "state": "APPROVED",
+     "body": ""
+    }
+   ],
+   "comments": [
+    {
+     "who": "echuawu",
+     "body": " /azpw run"
+    },
+    {
+     "who": "yxieca",
+     "body": "Review note (non-blocking):\n- Potential test skip/disable logic detected; please confirm intent and necessity.\n\nReviewed by AI agent on behalf of Ying.\n<!-- AI_AGENT_REVIEW:98d19704ce9c42e0a410e2b6a9914dc7e7c07986 -->"
+    },
+    {
+     "who": "echuawu",
+     "body": "/azp run"
+    }
+   ],
+   "createdAt": "2026-05-13T09:58:49Z"
+  },
+  "24787": {
+   "num": 24787,
+   "title": "[platform_tests][T2] Add test_sup_fan_recovery.py to verify sup fan status after config reload + cold reboot",
+   "login": "aeedara-nokia",
+   "affil": "Nokia",
+   "affil_src": "profile",
+   "add": 196,
+   "dele": 0,
+   "nfiles": 1,
+   "files": [
+    "tests/platform_tests/test_sup_fan_recovery.py"
+   ],
+   "body": "<!--\r\nPlease make sure you've read and understood our contributing guidelines;\r\nhttps://github.com/sonic-net/SONiC/blob/gh-pages/CONTRIBUTING.md\r\n\r\nPlease provide following information to help code review process a bit easier:\r\n-->\r\n### Description of PR\r\n<!--\r\n- Please include a summary of the change and which issue is fixed.\r\n- Please also include relevant motivation and context. Where should reviewer start? background context?\r\n- List any dependencies that are required for this change.\r\n-->\r\n\r\nSummary:\r\nAdds a new T2 chassis platform test `tests/platform_tests/test_sup_fan_recovery.py` that exercises the supervisor (sup) recovery path after a `config load_minigraph --override_config` followed by a cold reboot, and asserts that every fan on the sup comes back in `OK` state.\r\nThe test targets a thermalctld / psu-service issue where, after a sup reload + cold reboot, fans were intermittently reported as `Not present` by `show platform fan` and thermalctld emitted `UnboundLocalError` tracebacks in syslog (with associated `Fan removed warning` / `Insufficient number of working fans` messages).\r\n\r\nFixes # (issue)\r\n\r\n### Type of change\r\n\r\n<!--\r\n- Fill x for your type of change.\r\n- e.g.\r\n- [x] Bug fix\r\n-->\r\n\r\n- [ ] Bug fix\r\n- [ ] Testbed and Framework(new/improvement)\r\n- [ X] New Test case\r\n    - [ ] Skipped for non-supported platforms\r\n- [ ] Test case improvement\r\n\r\n\r\n### Back port request\r\n- [ ] 202311\r\n- [ ] 202405\r\n- [ ] 202411\r\n- [ ] 202505\r\n- [ X] 202511\r\n- [ ] 202512\r\n- [ ] 202605\r\n\r\n### Approach\r\n#### What is the motivation for this PR?\r\nAfter a chassis sup is reloaded with `config load_minigraph --override_config -y` and then cold rebooted, thermalctld occasionally came back in a broken state: `show platform fan` reported one or more fans as `Not present`, and syslog showed `UnboundLocalError` tracebacks plus `Fan removed warning` / `Insufficient number of working fans` messages. There was no automated regression coverage for this sup-specific recovery path, so the bug was caught only manually. This PR adds that coverage.\r\n\r\n\r\n#### How did you do it?\r\nAdded `tests/platform_tests/test_sup_fan_recovery.py` containing `test_sup_fan_status_after_reload_reboot`. The test is scoped to `t2` (via `pytest.mark.topology('t2')`) and iterates over `duthosts.supervisor_nodes`. For each sup it:\r\n1. Snapshots `/var/core/` on every DUT (sup + linecards).\r\n2. Skips cleanly if `/etc/sonic/minigraph.xml` is not present on the sup (cannot run `load_minigraph`).\r\n3. Arms a",
+   "reviews": [],
+   "comments": [
+    {
+     "who": "linux-foundation-easycla",
+     "body": "<a href=\"https://easycla.lfx.linuxfoundation.org/#/?version=2\"><img src=\"https://s3.amazonaws.com/cla-project-logo-prod/cla-signed.svg?v=2\" alt=\"CLA Signed\" align=\"left\" height=\"28\" width=\"328\" ></a><br >The committers listed above are authorized under a signed CLA.<ul><li>:white_check_mark: login: "
+    }
+   ],
+   "createdAt": "2026-05-21T18:58:30Z"
+  },
+  "24829": {
+   "num": 24829,
+   "title": "Fix: add port name for acl interface parsing",
+   "login": "ytzur1",
+   "affil": "nvidia",
+   "affil_src": "profile",
+   "add": 2,
+   "dele": 0,
+   "nfiles": 1,
+   "files": [
+    "ansible/library/minigraph_facts.py"
+   ],
+   "body": "<!--\r\nPlease make sure you've read and understood our contributing guidelines;\r\nhttps://github.com/sonic-net/SONiC/blob/gh-pages/CONTRIBUTING.md\r\n\r\nPlease provide following information to help code review process a bit easier:\r\n-->\r\n### Description of PR\r\nDue to PR #22166 - \r\nin ansible/templates/minigraph_dpg.j2 template for non-multi asic , _AttachTo_ field under acl interface are filled with port_alias_map[intf_alias] - which are the interfaces names (Ethernet*) not the port names (etp*). Therefore, modification is needed when parsing dpg file. \r\nI added an additional condition to check if the port name is in the ports dictionary, and if so adding it to acl_intfs.\r\n\r\nBefore this change, mg_facts[\"minigraph_acls\"] was empty due to no member being added to acl_intfs \r\nand we get an error when fetching mg_facts[\"minigraph_acls\"][\"DataAcl\"].\r\n\r\n\r\n\r\nSummary:\r\nFixes # (issue)\r\n\r\n### Type of change\r\n\r\n<!--\r\n- Fill x for your type of change.\r\n- e.g.\r\n- [x] Bug fix\r\n-->\r\n\r\n- [x] Bug fix\r\n- [ ] Testbed and Framework(new/improvement)\r\n- [ ] New Test case\r\n    - [ ] Skipped for non-supported platforms\r\n- [ ] Test case improvement\r\n\r\n\r\n### Back port request\r\n- [ ] 202311\r\n- [ ] 202405\r\n- [ ] 202411\r\n- [ ] 202505\r\n- [ ] 202511\r\n- [ ] 202512\r\n- [ ] 202605\r\n\r\n### Approach\r\n#### What is the motivation for this PR?\r\nmg_facts[\"minigraph_acls\"] was empty due to no member being added to acl_intfs  - no condition matched,\r\nand we get an error when fetching mg_facts[\"minigraph_acls\"][\"DataAcl\"]\r\n\r\n#### How did you do it?\r\nI added an additional condition to check if the port name is in the ports dictionary, and if so adding it to acl_intfs.\r\n\r\n#### How did you verify/test it?\r\nInternal regression\r\n\r\n#### Any platform specific information?\r\n\r\n#### Supported testbed topology if it's a new test case?\r\n\r\n### Documentation\r\n<!--\r\n(If it's a new feature, new test case)\r\nDid you update documentation/Wiki relevant to your implementation?\r\nLink to the wiki page?\r\n-->\r\n",
+   "reviews": [],
+   "comments": [],
+   "createdAt": "2026-05-24T07:24:40Z"
+  },
+  "24845": {
+   "num": 24845,
+   "title": "ARS test script",
+   "login": "apannerselva",
+   "affil": "Marvell Technology",
+   "affil_src": "profile",
+   "add": 797,
+   "dele": 1,
+   "nfiles": 7,
+   "files": [
+    "ansible/roles/test/files/ptftests/py3/arstest.py",
+    "tests/common/plugins/conditional_mark/tests_mark_conditions.yaml",
+    "tests/ecmp/ars/__init__.py",
+    "tests/ecmp/ars/acl.json",
+    "tests/ecmp/ars/ars.json",
+    "tests/ecmp/ars/conftest.py",
+    "tests/ecmp/ars/test_ars.py"
+   ],
+   "body": "<!--\r\nPlease make sure you've read and understood our contributing guidelines;\r\nhttps://github.com/sonic-net/SONiC/blob/gh-pages/CONTRIBUTING.md\r\n\r\nPlease provide following information to help code review process a bit easier:\r\n-->\r\n### Description of PR\r\n<!--\r\n- Please include a summary of the change and which issue is fixed.\r\n- Please also include relevant motivation and context. Where should reviewer start? background context?\r\n- List any dependencies that are required for this change.\r\n-->\r\nNew test plan for Adaptive Routing and Switching HLD [sonic-net/SONiC#1958]\r\n\r\nSummary:\r\nFixes # (issue)\r\n\r\n\r\n### Type of change\r\n\r\n<!--\r\n- Fill x for your type of change.\r\n- e.g.\r\n- [x] Bug fix\r\n-->\r\n\r\n- [ ] Bug fix\r\n- [ ] Testbed and Framework(new/improvement)\r\n- [x] New Test case\r\n    - [x] Skipped for non-supported platforms\r\n- [ ] Test case improvement\r\n\r\n\r\n### Back port request\r\n- [ ] 202311\r\n- [ ] 202405\r\n- [ ] 202411\r\n- [ ] 202505\r\n- [x] 202511\r\n- [ ] 202512\r\n- [x] 202605\r\n\r\n### Approach\r\n#### What is the motivation for this PR?\r\nNew test plan for ARS HLD [sonic-net/SONiC#1958]\r\n\r\n#### How did you do it?\r\nAdded ARS test plan covering adaptive routing and switching functionality.\r\n\r\n#### How did you verify/test it?\r\nRan it on the device \r\nResults -\r\necmp/ars/test_ars.py::test_ars_modes[per-packet-global] PASSED [ 10%]\r\necmp/ars/test_ars.py::test_ars_modes[per-packet-interface] PASSED [ 20%]\r\necmp/ars/test_ars.py::test_ars_modes[per-packet-nexthop] PASSED [ 30%]\r\necmp/ars/test_ars.py::test_ars_modes[per-flowlet-global] PASSED [ 40%]\r\necmp/ars/test_ars.py::test_ars_modes[per-flowlet-interface] PASSED [ 50%]\r\necmp/ars/test_ars.py::test_ars_modes[per-flowlet-nexthop] PASSED [ 60%]\r\necmp/ars/test_ars.py::test_ars_acl_action PASSED [ 70%]\r\necmp/ars/test_ars.py::test_ars_nonars_interface[interface] PASSED [ 80%]\r\necmp/ars/test_ars.py::test_ars_nonars_interface[nexthop] PASSED [ 90%]\r\necmp/ars/test_ars.py::test_ars_stress PASSED [100%]\r\n\r\n#### Any platform specific information?\r\nTo be supported for ARS supported platforms and now the script is supported only for marvell-teralynx\r\n\r\n#### Supported testbed topology if it's a new test case?\r\nT0 Topology\r\n\r\n### Documentation\r\n<!--\r\n(If it's a new feature, new test case)\r\nDid you update documentation/Wiki relevant to your implementation?\r\nLink to the wiki page?\r\n-->\r\n",
+   "reviews": [
+    {
+     "who": "github-advanced-security",
+     "state": "COMMENTED",
+     "body": ""
+    },
+    {
+     "who": "github-advanced-security",
+     "state": "COMMENTED",
+     "body": ""
+    }
+   ],
+   "comments": [
+    {
+     "who": "radha-danda",
+     "body": "/azpw run"
+    },
+    {
+     "who": "apannerselva",
+     "body": "@BYGX-wcr @xwjiang-ms @yutongzhang-microsoft  please review. "
+    }
+   ],
+   "createdAt": "2026-05-25T15:18:56Z"
+  },
+  "24876": {
+   "num": 24876,
+   "title": "lldp_syncd failure due to not enough converge time",
+   "login": "Yogapriya-cisco",
+   "affil": "Cisco",
+   "affil_src": "login-suffix",
+   "add": 57,
+   "dele": 0,
+   "nfiles": 1,
+   "files": [
+    "tests/lldp/test_lldp_syncd.py"
+   ],
+   "body": "<!--\r\nPlease make sure you've read and understood our contributing guidelines;\r\nhttps://github.com/sonic-net/SONiC/blob/gh-pages/CONTRIBUTING.md\r\n\r\nPlease provide following information to help code review process a bit easier:\r\n-->\r\n### Description of PR\r\n<!--\r\n- Please include a summary of the change and which issue is fixed.\r\n- Please also include relevant motivation and context. Where should reviewer start? background context?\r\n- List any dependencies that are required for this change.\r\n-->\r\nSummary:\r\nAdd module-scoped autouse fixture wait_for_lldp_appl_db in test_lldp_syncd.py.\r\nBefore any test in the module runs, wait until LLDP neighbor discovery is stable, then until APPL_DB has matching LLDP_ENTRY_TABLE keys.\r\n\r\n### Root cause:\r\ntest_lldp_syncd can fail intermittently because:\r\n\r\nthe before testcase l2/test_l2_configure.py doing the config reload -y in the last which causing lldp_syncd to fail .\r\nlldpd is still learning neighbors when tests start (interface set still changing).\r\nAPPL_DB lags behind lldpctl (orchagent/syncd not yet populated).\r\nTests then assert on incomplete LLDP_ENTRY_TABLE data and flake.\r\n\r\nSummary:\r\nFixes # (issue)\r\n\r\n### Type of change\r\n\r\n<!--\r\n- Fill x for your type of change.\r\n- e.g.\r\n- [x] Bug fix\r\n-->\r\n\r\n- [ ] Bug fix\r\n- [ ] Testbed and Framework(new/improvement)\r\n- [ ] New Test case\r\n    - [ ] Skipped for non-supported platforms\r\n- [ ] Test case improvement\r\n\r\n\r\n### Back port request\r\n- [ ] 202311\r\n- [ ] 202405\r\n- [ ] 202411\r\n- [ ] 202505\r\n- [ ] 202511\r\n- [ ] 202512\r\n- [ ] 202605\r\n\r\n### Approach\r\n#### What is the motivation for this PR?\r\nFailed testcase because of not enough converge time\r\n#### How did you do it?\r\nadded enough converge time before starting testcase\r\n#### How did you verify/test it?\r\nRun test_lldp_syncd.py along with l2/test_l2_configure.py\r\n#### Any platform specific information?\r\nNo\r\n#### Supported testbed topology if it's a new test case?\r\n\r\n### Documentation\r\n<!--\r\n(If it's a new feature, new test case)\r\nDid you update documentation/Wiki relevant to your implementation?\r\nLink to the wiki page?\r\n-->\r\n",
+   "reviews": [
+    {
+     "who": "ZhaohuiS",
+     "state": "APPROVED",
+     "body": "@Yogapriya-cisco  do you test it on t0/t1 those platforms?"
+    },
+    {
+     "who": "prhoskot",
+     "state": "APPROVED",
+     "body": ""
+    }
+   ],
+   "comments": [
+    {
+     "who": "Yogapriya-cisco",
+     "body": "> @Yogapriya-cisco do you test it on t0/t1 those platforms?\r\n\r\n@ZhaohuiS yes I tested on t0 platform.can you please merge the changes."
+    },
+    {
+     "who": "vrajeshe",
+     "body": "\r\nHi @ZhaohuiS can you pls help in approving and mergint the same"
+    }
+   ],
+   "createdAt": "2026-05-26T16:50:27Z"
+  },
+  "24884": {
+   "num": 24884,
+   "title": "[bgp scale] Reduce DUT-side observer load during route convergence tests",
+   "login": "yutongzhang-microsoft",
+   "affil": "microsoft",
+   "affil_src": "profile",
+   "add": 82,
+   "dele": 4,
+   "nfiles": 1,
+   "files": [
+    "tests/bgp/test_ipv6_bgp_scale.py"
+   ],
+   "body": "## What this PR does\n\nProfiling `test_sessions_flapping[500]` with Azure Profiler showed that a sizeable fraction of OnCPU samples on the DUT during the test came from work unrelated to the route programming code path under test:\n\n| Process | OnCPU share | What it's doing |\n| --- | --- | --- |\n| `openbmpd` | ~15% | BMP daemon writes `BGP_RIB_OUT_TABLE` to redis on every BGP UPDATE. With ~500 sessions flapping simultaneously this dominates redis I/O. |\n| `redis-check-rdb` | ~20% | Redis background RDB snapshots triggered by the write burst the test itself produces. |\n\nTogether these account for ~35% of OnCPU on the DUT, all of which is **observer noise** for a route-scale convergence test - it inflates measured convergence numbers and hides the real cost of the SONiC route programming path.\n\n## Changes\n\n1. **New autouse module fixture `minimize_dut_background_load`** - stops `openbmpd` and disables Redis periodic RDB snapshots for the duration of the module, then restores them afterwards.\n2. **`check_bgp_routes_converged`: default `interval` 1s -> 5s** - the convergence loop spawns `docker exec bgp vtysh -c 'show ipv6 route bgp json'` every interval; with 500 neighbors the JSON payload is multi-MB and polling once per second is itself a source of redis / vtysh load. 5s is still well within the 300s `controlplane_convergence` budget.\n3. **`get_route_programming_metrics_from_sairedis_replay`: cap reads at 100MB via `tail -c 100M`** - the rotated `sairedis.rec.1` can be hundreds of MB, and events of interest are always near the tail (after `start_time`). The existing `ts_regex` check still discards anything older than `start_time`, so this only changes how many bytes we scan, not which events are reported.\n4. **Cache `_get_backplane_ports`** - `port_map` is static for the lifetime of the ptf process, so re-scanning it inside every downtime calculation is unnecessary.\n\n## Test plan\n\n- No functional change to the convergence assertions themselves; the fixture only adjusts background services that the assertions do not depend on.\n- `openbmpd` and the redis `save` config are saved before stop/disable and restored on teardown (including the `module_ignore_errors` paths) so the DUT is left in the same state as before the run.\n- Default `interval=5` can be overridden by callers that want sub-second polling.\n\n## Why now\n\nThe test exists to measure SONiC route convergence under scale, but the current setup also exercises BMP export and Redis persistence which are not i",
+   "reviews": [],
+   "comments": [],
+   "createdAt": "2026-05-27T02:36:47Z"
+  },
+  "24902": {
+   "num": 24902,
+   "title": "Handle pytest.fail.Exeption in wait_until",
+   "login": "wrideout-arista",
+   "affil": "Arista",
+   "affil_src": "login-suffix",
+   "add": 1,
+   "dele": 1,
+   "nfiles": 1,
+   "files": [
+    "tests/common/utilities.py"
+   ],
+   "body": "Allow pytest_assert to trigger wait_until retries.\r\n\r\n<!--\r\nPlease make sure you've read and understood our contributing guidelines;\r\nhttps://github.com/sonic-net/SONiC/blob/gh-pages/CONTRIBUTING.md\r\n\r\nPlease provide following information to help code review process a bit easier:\r\n-->\r\n### Description of PR\r\n<!--\r\n- Please include a summary of the change and which issue is fixed.\r\n- Please also include relevant motivation and context. Where should reviewer start? background context?\r\n- List any dependencies that are required for this change.\r\n-->\r\n\r\nSummary:\r\nFixes #24726\r\n\r\n### Type of change\r\n\r\n<!--\r\n- Fill x for your type of change.\r\n- e.g.\r\n- [x] Bug fix\r\n-->\r\n\r\n- [x] Bug fix\r\n- [ ] Testbed and Framework(new/improvement)\r\n- [ ] New Test case\r\n    - [ ] Skipped for non-supported platforms\r\n- [ ] Test case improvement\r\n\r\n\r\n### Back port request\r\n- [ ] 202311\r\n- [ ] 202405\r\n- [ ] 202411\r\n- [ ] 202505\r\n- [ ] 202511\r\n- [ ] 202512\r\n- [x] 202605\r\n\r\n### Approach\r\n#### What is the motivation for this PR?\r\nwait_until already handles Exception, and multiple places in the code assume pytest.fail.Exception is handled as well.  pytest.fail.Exception actually derives from BaseException, which means it is currently unhandled by wait_until, and so will not trigger retries (and immediately fail tests).\r\n\r\n#### How did you do it?\r\nAdded pytest.fail.Exception to the list of handled exception classes in wait_until.\r\n\r\n#### How did you verify/test it?\r\nManual test run.\r\n\r\n#### Any platform specific information?\r\nN/A\r\n\r\n#### Supported testbed topology if it's a new test case?\r\nN/A\r\n\r\n### Documentation\r\nN/A\r\n<!--\r\n(If it's a new feature, new test case)\r\nDid you update documentation/Wiki relevant to your implementation?\r\nLink to the wiki page?\r\n-->\r\n",
+   "reviews": [],
+   "comments": [
+    {
+     "who": "wrideout-arista",
+     "body": "/azpw run"
+    },
+    {
+     "who": "wrideout-arista",
+     "body": "@wangxin @lolyu @yutongzhang-microsoft can I get eyes on this please?"
+    }
+   ],
+   "createdAt": "2026-05-27T17:07:54Z"
+  },
+  "24927": {
+   "num": 24927,
+   "title": "Fix test_link_local_ip failures in dualtor active-active topology",
+   "login": "xixuej",
+   "affil": "nvidia-sonic",
+   "affil_src": "profile",
+   "add": 25,
+   "dele": 11,
+   "nfiles": 1,
+   "files": [
+    "tests/ip/link_local/test_link_local_ip.py"
+   ],
+   "body": "<!--\r\nPlease make sure you've read and understood our contributing guidelines;\r\nhttps://github.com/sonic-net/SONiC/blob/gh-pages/CONTRIBUTING.md\r\n\r\nPlease provide following information to help code review process a bit easier:\r\n-->\r\n### Description of PR\r\n<!--\r\n- Please include a summary of the change and which issue is fixed.\r\n- Please also include relevant motivation and context. Where should reviewer start? background context?\r\n- List any dependencies that are required for this change.\r\n-->\r\n\r\nSummary: Fix test_link_local_ip failures in dualtor active-active topology\r\nFixes # (issue)\r\n\r\nTwo issues caused test_link_local_ip to fail on dualtor-aa setups after SAI_NOT_DROP_SIP_DIP_LINK_LOCAL=1 was added to sai.profile:\r\n\r\n1. Wrong dst MAC on downlink ingress: On dualtor topologies, VLAN ports use a shared VLAN MAC (e.g. 00:aa:bb:cc:dd:ee) rather than the global router MAC. The test hardcoded ingress_router_mac for both uplink and downlink directions, causing DUT to drop downlink packets due to dst MAC mismatch. Add get_downlink_router_mac() that looks up the VLAN MAC from config_facts, falling back to the global router MAC on non-dualtor setups.\r\n\r\n2. Downlink traffic not reaching tested DUT: On active-active dualtor, the NiC simulator uses an OVS hash-select group to forward server traffic, which may not reach the DUT under test. Add the dualtor_active_active_setup_standby_on_random_unselected_tor marker so setup_dualtor_mux_ports configures the peer DUT as standby, ensuring downlink traffic is directed to the tested DUT. Change the DUT selection fixture from enum_rand_one_per_hwsku_frontend_hostname to rand_one_dut_hostname to align with the marker's expectations.\r\n\r\n### Type of change\r\n\r\n<!--\r\n- Fill x for your type of change.\r\n- e.g.\r\n- [x] Bug fix\r\n-->\r\n\r\n- [x] Bug fix\r\n- [ ] Testbed and Framework(new/improvement)\r\n- [ ] New Test case\r\n    - [ ] Skipped for non-supported platforms\r\n- [ ] Test case improvement\r\n\r\n\r\n### Back port request\r\n- [ ] 202311\r\n- [ ] 202405\r\n- [ ] 202411\r\n- [ ] 202505\r\n- [ ] 202511\r\n- [ ] 202512\r\n- [x] 202605\r\n\r\n### Approach\r\n#### What is the motivation for this PR?\r\nThe test_link_local_ip tests fail on dualtor active-active topology\r\n#### How did you do it?\r\nFix the test issue for dualtor active-active topology\r\n#### How did you verify/test it?\r\nrun the test on dualtor active-active topology and the test can pass\r\n#### Any platform specific information?\r\nThe failure was specific on dualtor active-active topology\r\n#### Supported",
+   "reviews": [
+    {
+     "who": "nhe-NV",
+     "state": "APPROVED",
+     "body": ""
+    },
+    {
+     "who": "yyynini",
+     "state": "APPROVED",
+     "body": "lgtm"
+    }
+   ],
+   "comments": [],
+   "createdAt": "2026-05-28T06:43:05Z"
+  },
+  "24930": {
+   "num": 24930,
+   "title": "[vxlan] Improve vnet bgp subintf cleanup diagnostics",
+   "login": "yyynini",
+   "affil": "unknown",
+   "affil_src": "none",
+   "add": 78,
+   "dele": 37,
+   "nfiles": 1,
+   "files": [
+    "tests/vxlan/test_vxlan_vnet_bgp_subintf.py"
+   ],
+   "body": "<!--\r\nPlease make sure you've read and understood our contributing guidelines;\r\nhttps://github.com/sonic-net/SONiC/blob/gh-pages/CONTRIBUTING.md\r\n\r\nPlease provide following information to help code review process a bit easier:\r\n-->\r\n### Description of PR\r\n<!--\r\n- Please include a summary of the change and which issue is fixed.\r\n- Please also include relevant motivation and context. Where should reviewer start? background context?\r\n- List any dependencies that are required for this change.\r\n-->\r\nImprove cleanup robustness and failure diagnostics for `tests/vxlan/test_vxlan_vnet_bgp_subintf.py`.\r\n   \r\nThis PR does not change the VXLAN dataplane expectation, packet timeout, topology marker, or skip behavior. It only makes the test easier to debug and reduces the chance that cleanup stops early after a setup/test failure.\r\n\r\n\r\nSummary:\r\nFixes # (issue)\r\n\r\n### Type of change\r\n\r\n<!--\r\n- Fill x for your type of change.\r\n- e.g.\r\n- [x] Bug fix\r\n-->\r\n\r\n- [ ] Bug fix\r\n- [ ] Testbed and Framework(new/improvement)\r\n- [ ] New Test case\r\n    - [ ] Skipped for non-supported platforms\r\n- [x] Test case improvement\r\n\r\n\r\n### Back port request\r\n- [ ] 202311\r\n- [ ] 202405\r\n- [ ] 202411\r\n- [ ] 202505\r\n- [ ] 202511\r\n- [ ] 202512\r\n- [ ] 202605\r\n\r\n### Approach\r\n#### What is the motivation for this PR?\r\n In recent dualtor-aa pipeline triage, `test_vnet_with_bgp_intf_smacrewrite` failed packet verification and cleanup/config reload did not recover cleanly, which made the later post-test sanity failure harder to interpret.\r\n   \r\nThe goal of this PR is not to mask or fix the VXLAN dataplane failure. The goal is to:\r\n   - Preserve the original packet failure.\r\n   - Add bounded diagnostic context when WL-to-T1 VXLAN encapsulation verification fails.\r\n   - Make cleanup continue through independent cleanup phases even if one phase fails.\r\n\r\n#### How did you do it?\r\n- Added diagnostic logging around WL-to-T1 VXLAN encapsulation packet verification failure.\r\n   - Dumps bounded DUT state on failure, including:\r\n     - subinterface info\r\n     - T1 PTF ports\r\n     - `show interfaces portchannel`\r\n     - `show ip bgp vrf <Vnet> summary`\r\n     - `show vnet routes all`\r\n     - `aclshow -a`\r\n     - `vxlan_router_mac` from APPL_DB\r\n - Hardened cleanup by splitting cleanup into independent phases:\r\n     - restore backup `config_db.json` and run `config_reload`\r\n     - recover GNMI cert config\r\n     - remove PTF subinterfaces\r\n     - remove PTF bond interfaces\r\n     - stop test ExaBGP/http API process",
+   "reviews": [],
+   "comments": [],
+   "createdAt": "2026-05-28T07:27:36Z"
+  },
+  "24975": {
+   "num": 24975,
+   "title": "Fix the NTP polling step in deploy-mg playbook",
+   "login": "congh-nvidia",
+   "affil": "NVidia",
+   "affil_src": "profile",
+   "add": 4,
+   "dele": 0,
+   "nfiles": 1,
+   "files": [
+    "ansible/config_sonic_basedon_testbed.yml"
+   ],
+   "body": "<!--\r\nPlease make sure you've read and understood our contributing guidelines;\r\nhttps://github.com/sonic-net/SONiC/blob/gh-pages/CONTRIBUTING.md\r\n\r\nPlease provide following information to help code review process a bit easier:\r\n-->\r\n### Description of PR\r\n<!--\r\n- Please include a summary of the change and which issue is fixed.\r\n- Please also include relevant motivation and context. Where should reviewer start? background context?\r\n- List any dependencies that are required for this change.\r\n-->\r\n\r\nSummary:\r\nImmediately running command \"chronyc burst 4/4\" after chrony.service restart may fail on some old slow platforms(for example 2700-a0). \r\nWait 3 seconds before running the chrony command.\r\n\r\n### Type of change\r\n\r\n<!--\r\n- Fill x for your type of change.\r\n- e.g.\r\n- [x] Bug fix\r\n-->\r\n\r\n- [x] Bug fix\r\n- [ ] Testbed and Framework(new/improvement)\r\n- [ ] New Test case\r\n    - [ ] Skipped for non-supported platforms\r\n- [ ] Test case improvement\r\n\r\n\r\n### Back port request\r\n- [ ] 202311\r\n- [ ] 202405\r\n- [ ] 202411\r\n- [ ] 202505\r\n- [ ] 202511\r\n- [ ] 202512\r\n- [x] 202605\r\n\r\n### Approach\r\n#### What is the motivation for this PR?\r\nFix the NTP polling step in deploy-mg playbook\r\n#### How did you do it?\r\nWait 3 seconds before running the chrony command \"chronyc burst 4/4\".\r\n#### How did you verify/test it?\r\nRun the deploy-mg playbook on sn2700-a0 tetsbed. Issue is not observed again.\r\n#### Any platform specific information?\r\n\r\n#### Supported testbed topology if it's a new test case?\r\n\r\n### Documentation\r\n<!--\r\n(If it's a new feature, new test case)\r\nDid you update documentation/Wiki relevant to your implementation?\r\nLink to the wiki page?\r\n-->\r\n",
+   "reviews": [
+    {
+     "who": "nhe-NV",
+     "state": "APPROVED",
+     "body": ""
+    }
+   ],
+   "comments": [],
+   "createdAt": "2026-05-29T09:06:13Z"
+  },
+  "25000": {
+   "num": 25000,
+   "title": "Fix test_srv6_vlan_forwarding when no ipv6 mgmt for ptf docker",
+   "login": "ytzur1",
+   "affil": "nvidia",
+   "affil_src": "profile",
+   "add": 6,
+   "dele": 4,
+   "nfiles": 1,
+   "files": [
+    "tests/srv6/test_srv6_vlan_forwarding.py"
+   ],
+   "body": "fix the test_srv6_vlan_forwarding.py to use the ptf_mgmt_ipv6 if it is available\r\n\r\nChange-Id: I2e3f3d40b6ae31d0e2ce8fa4d5bad79acf918e15\r\n\r\n<!--\r\nPlease make sure you've read and understood our contributing guidelines;\r\nhttps://github.com/sonic-net/SONiC/blob/gh-pages/CONTRIBUTING.md\r\n\r\nPlease provide following information to help code review process a bit easier:\r\n-->\r\n### Description of PR\r\nFix SRv6 test issue - when there is no ipv6 mgmt for ptf docker, use default.\r\n\r\n\r\nSummary:\r\nFixes # (issue)\r\n\r\n### Type of change\r\n\r\n<!--\r\n- Fill x for your type of change.\r\n- e.g.\r\n- [x] Bug fix\r\n-->\r\n\r\n- [x] Bug fix\r\n- [ ] Testbed and Framework(new/improvement)\r\n- [ ] New Test case\r\n    - [ ] Skipped for non-supported platforms\r\n- [ ] Test case improvement\r\n\r\n\r\n### Back port request\r\n- [ ] 202311\r\n- [ ] 202405\r\n- [ ] 202411\r\n- [ ] 202505\r\n- [ ] 202511\r\n- [ ] 202512\r\n- [x] 202605\r\n\r\n### Approach\r\n#### What is the motivation for this PR?\r\ntest is broken when no ipv6 mgmt in configured on ptf docker. same is applied for test_srv6_dataplane.py.\r\n\r\n#### How did you do it?\r\nAdded default value to use for ipv6 when none if configured in docker.\r\n\r\n#### How did you verify/test it?\r\ninternal regression \r\n\r\n#### Any platform specific information?\r\n\r\n#### Supported testbed topology if it's a new test case?\r\n\r\n### Documentation\r\n<!--\r\n(If it's a new feature, new test case)\r\nDid you update documentation/Wiki relevant to your implementation?\r\nLink to the wiki page?\r\n-->\r\n",
+   "reviews": [],
+   "comments": [],
+   "createdAt": "2026-05-31T09:07:20Z"
+  },
+  "25012": {
+   "num": 25012,
+   "title": "Fixing PMON status test failures",
+   "login": "caleb-nexthop",
+   "affil": "NextHop",
+   "affil_src": "login-suffix",
+   "add": 35,
+   "dele": 55,
+   "nfiles": 7,
+   "files": [
+    "tests/platform_tests/daemon/conftest.py",
+    "tests/platform_tests/daemon/test_chassisd.py",
+    "tests/platform_tests/daemon/test_fancontrol.py",
+    "tests/platform_tests/daemon/test_ledd.py",
+    "tests/platform_tests/daemon/test_pcied.py",
+    "tests/platform_tests/daemon/test_psud.py",
+    "tests/platform_tests/daemon/test_syseepromd.py"
+   ],
+   "body": "<!--\r\nPlease make sure you've read and understood our contributing guidelines;\r\nhttps://github.com/sonic-net/SONiC/blob/gh-pages/CONTRIBUTING.md\r\n\r\nPlease provide following information to help code review process a bit easier:\r\n-->\r\n### Description of PR\r\n<!--\r\n- Please include a summary of the change and which issue is fixed.\r\n- Please also include relevant motivation and context. Where should reviewer start? background context?\r\n- List any dependencies that are required for this change.\r\n-->\r\n\r\nSummary:\r\nFixes # https://github.com/sonic-net/sonic-mgmt/issues/25013 \r\nFix failing PMON daemon term/kill tests (test_pcied, test_syseepromd, test_psud, and the same pattern in test_ledd/test_chassisd/test_fancontrol) by\r\ndisabling pmon container autorestart for the duration of these tests via a shared fixture so a killed daemon respawns in place.\r\n\r\n### Type of change\r\n\r\n<!--\r\n- Fill x for your type of change.\r\n- e.g.\r\n- [x] Bug fix\r\n-->\r\n\r\n- [x] Bug fix\r\n- [ ] Testbed and Framework(new/improvement)\r\n- [ ] New Test case\r\n    - [ ] Skipped for non-supported platforms\r\n- [ ] Test case improvement\r\n\r\n\r\n### Back port request\r\n- [ ] 202311\r\n- [ ] 202405\r\n- [ ] 202411\r\n- [ ] 202505\r\n- [x] 202511\r\n- [x] 202605\r\n\r\n### Approach\r\n#### What is the motivation for this PR?\r\nwith pmon auto_restart=enabled (production default), killing a critical daemon makes supervisor-proc-exit-listener terminate supervisord, restarting the whole container and resetting the PID namespace, so post_pid > pre_pid fails. This surfaces under run_optimal (the TestEngine/CI mode), which skips the pretest phase that would otherwise disable autorestart.\r\n\r\n#### How did you do it?\r\nReplaced a lingering time.sleep(10) with wait_until(50, 10, 0, check_expected_daemon_status,\u2026). similar to what was done in [24384](https://github.com/sonic-net/sonic-mgmt/pull/24384)\r\nAdd a shared, module-scoped disable_pmon_container_autorestart fixture (plus a shared check_daemon_status) in tests/platform_tests/daemon/conftest.py, scoped to feature_list=[\"pmon\"] and restored on teardown.\r\n\r\n#### How did you verify/test it?\r\nRan on NH-4010 device and confirmed tests that were previously failing now pass.\r\n\r\n#### Any platform specific information?\r\nNone\r\n\r\n#### Supported testbed topology if it's a new test case?\r\nN/A\r\n\r\n### Documentation\r\n<!--\r\n(If it's a new feature, new test case)\r\nDid you update documentation/Wiki relevant to your implementation?\r\nLink to the wiki page?\r\n-->\r\nN/A",
+   "reviews": [
+    {
+     "who": "github-advanced-security",
+     "state": "COMMENTED",
+     "body": ""
+    },
+    {
+     "who": "liamkearney-msft",
+     "state": "APPROVED",
+     "body": ""
+    }
+   ],
+   "comments": [
+    {
+     "who": "caleb-nexthop",
+     "body": "Checking in on this, anything that is blocking from getting this merged?"
+    }
+   ],
+   "createdAt": "2026-06-01T17:18:59Z"
+  },
+  "25040": {
+   "num": 25040,
+   "title": "[bgp/agg] Make BGP aggregate-address tests solid against per-DUT flakiness",
+   "login": "nanali-msft",
+   "affil": "Microsoft",
+   "affil_src": "login-suffix",
+   "add": 111,
+   "dele": 32,
+   "nfiles": 4,
+   "files": [
+    "tests/bgp/bgp_aggregate_helpers.py",
+    "tests/bgp/test_bgp_aggregate_address.py",
+    "tests/bgp/test_bgp_aggregate_address_bbr_dynamics.py",
+    "tests/bgp/test_bgp_aggregate_address_scale_stress.py"
+   ],
+   "body": "\r\n<!--\r\nPlease make sure you've read and understood our contributing guidelines;\r\nhttps://github.com/sonic-net/SONiC/blob/gh-pages/CONTRIBUTING.md\r\n\r\nPlease provide following information to help code review process a bit easier:\r\n-->\r\n### Description of PR\r\n<!--\r\n- Please include a summary of the change and which issue is fixed.\r\n- Please also include relevant motivation and context. Where should reviewer start? background context?\r\n- List any dependencies that are required for this change.\r\n-->\r\nFixes flaky failures in the BGP aggregate-address test suite that reproduced on some DUTs/testbeds but not others. The tests were correctly exercising the feature, but their verification logic was sensitive to ambient/stale state on shared testbeds. These changes make the checks origin-aware and the BBR state deterministic and exempt the stress module from memory-increase gating, without weakening any real product assertion.\r\n\r\nSummary:\r\nFixes # (issue)\r\n\r\n### Type of change\r\n\r\n<!--\r\n- Fill x for your type of change.\r\n- e.g.\r\n- [x] Bug fix\r\n-->\r\n\r\n- [ ] Bug fix\r\n- [ ] Testbed and Framework(new/improvement)\r\n- [ ] New Test case\r\n    - [ ] Skipped for non-supported platforms\r\n- [x] Test case improvement\r\n\r\n\r\n### Back port request\r\n- [ ] 202311\r\n- [ ] 202405\r\n- [ ] 202411\r\n- [ ] 202505\r\n- [x] 202511\r\n- [x] 202603\r\n\r\n### Approach\r\n#### What is the motivation for this PR?\r\nSeveral BGP aggregate-address tests failed intermittently depending on which DUT\r\nthey ran on. Investigation showed the failures came from test fragility, not\r\nproduct regressions:\r\n\r\n1. **Route verification was not origin-aware. ** `check_route_on_neighbor`    counted *any* BGP path for a prefix. A stale/foreign route for the same prefix on a shared veos neighbor (left by a prior run or originated by   another DUT) caused false \"present\" results and failed expected-absent assertions.\r\n\r\n2. **`test_bgp_aggregate_address` trusted ambient BBR state.** A `bbr-required`  aggregate only becomes `active` once bgpcfgd has actually applied  BBR-enabled. The value read by `is_bbr_enabled()` (CONFIG_DB / constants.yml)  could disagree with bgpcfgd's operational state on a DUT carrying state from  a previous run, so the predicted STATE_DB value was wrong and the test timed  out. The `_when_bbr_changed` variant, which performs a real BBR transition, always passed \u2014 confirming the gap.\r\n\r\n3. **The scale/stress module tripped the global memory monitor.** All three stress tests pass, but installing ~1000 aggregates",
+   "reviews": [
+    {
+     "who": "shixizhang",
+     "state": "APPROVED",
+     "body": ""
+    }
+   ],
+   "comments": [],
+   "createdAt": "2026-06-02T13:07:24Z"
+  },
+  "25094": {
+   "num": 25094,
+   "title": "Add disable_memory_utilization option for fwutil test cases",
+   "login": "zypgithub",
+   "affil": "unknown",
+   "affil_src": "none",
+   "add": 2,
+   "dele": 1,
+   "nfiles": 1,
+   "files": [
+    "tests/platform_tests/fwutil/test_fwutil.py"
+   ],
+   "body": "\r\n<!--\r\nPlease make sure you've read and understood our contributing guidelines;\r\nhttps://github.com/sonic-net/SONiC/blob/gh-pages/CONTRIBUTING.md\r\n\r\nPlease provide following information to help code review process a bit easier:\r\n-->\r\n### Description of PR\r\n<!--\r\n- Please include a summary of the change and which issue is fixed.\r\n- Please also include relevant motivation and context. Where should reviewer start? background context?\r\n- List any dependencies that are required for this change.\r\n-->\r\n\r\nSummary:Add disable_memory_utilization option for fwutil test cases\r\nThe fwutil tests need to reboot the devices and not suitable to compare the memory usage before and after reboot\r\nFixes # (issue)\r\n\r\n### Type of change\r\n\r\n<!--\r\n- Fill x for your type of change.\r\n- e.g.\r\n- [x] Bug fix\r\n-->\r\n\r\n- [ ] Bug fix\r\n- [ ] Testbed and Framework(new/improvement)\r\n- [ ] New Test case\r\n    - [ ] Skipped for non-supported platforms\r\n- [x] Test case improvement\r\n\r\n\r\n### Back port request\r\n- [ ] 202311\r\n- [ ] 202405\r\n- [ ] 202411\r\n- [ ] 202505\r\n- [ ] 202511\r\n- [ ] 202512\r\n- [ ] 202605\r\n\r\n### Approach\r\n#### What is the motivation for this PR?\r\nThe fwutil tests need to reboot the devices and not suitable to compare the memory usage before and after reboot\r\n#### How did you do it?\r\nadd disable_memory_utilization for the fwutil tests\r\n#### How did you verify/test it?\r\nRun the tests\r\n#### Any platform specific information?\r\n\r\n#### Supported testbed topology if it's a new test case?\r\n\r\n### Documentation\r\n<!--\r\n(If it's a new feature, new test case)\r\nDid you update documentation/Wiki relevant to your implementation?\r\nLink to the wiki page?\r\n-->\r\n",
+   "reviews": [
+    {
+     "who": "nhe-NV",
+     "state": "APPROVED",
+     "body": ""
+    }
+   ],
+   "comments": [],
+   "createdAt": "2026-06-03T09:49:30Z"
+  },
+  "25123": {
+   "num": 25123,
+   "title": "[TH6] test_po_cleanup fix for large number of lags(100s)",
+   "login": "sanjair-git",
+   "affil": "Nokia",
+   "affil_src": "profile",
+   "add": 79,
+   "dele": 5,
+   "nfiles": 1,
+   "files": [
+    "tests/pc/test_po_cleanup.py"
+   ],
+   "body": "<!--\r\nPlease make sure you've read and understood our contributing guidelines;\r\nhttps://github.com/sonic-net/SONiC/blob/gh-pages/CONTRIBUTING.md\r\n\r\nPlease provide following information to help code review process a bit easier:\r\n-->\r\n### Description of PR\r\n<!--\r\n- Please include a summary of the change and which issue is fixed.\r\n- Please also include relevant motivation and context. Where should reviewer start? background context?\r\n- List any dependencies that are required for this change.\r\n-->\r\n\r\nSummary:\r\nFixes # (issue)\r\n\r\n- This PR fixes issues with _test_po_cleanup_after_reload_ (_test_po_cleanup.py_), when there are many port channels (e.g. 100+ LAGs on large / TH6-style topologies).\r\n- And also adjusts _test_po_cleanup_after_reload_ so it remains reliable on systems with many port channels.\r\n\r\n### Type of change\r\n\r\n<!--\r\n- Fill x for your type of change.\r\n- e.g.\r\n- [x] Bug fix\r\n-->\r\n\r\n- [ ] Bug fix\r\n- [ ] Testbed and Framework(new/improvement)\r\n- [ ] New Test case\r\n    - [ ] Skipped for non-supported platforms\r\n- [x] Test case improvement\r\n\r\n\r\n### Back port request\r\n- [ ] 202311\r\n- [ ] 202405\r\n- [ ] 202411\r\n- [ ] 202505\r\n- [ ] 202511\r\n- [x] 202512\r\n- [x] 202605\r\n\r\n### Approach\r\n#### What is the motivation for this PR?\r\n\r\n- **LogAnalyzer false failures:** With hundreds of LAGs, expecting every _`cleanTeamProcesses: Sent SIGTERM to port channel <name>`_ line to appear in syslog is brittle; under CPU stress, not every line may be retained, so the test fails even when teammgrd behaved correctly.\r\n\r\n```python\r\ntests.common.plugins.loganalyzer.loganalyzer.LogAnalyzerError: match: 0\r\nexpected_match: 223\r\nexpected_missing_match: 1\r\n\r\nExpected Messages that are missing:\r\ncleanTeamProcesses: Sent SIGTERM to port channel.*PortChannel322.*\r\n``` \r\n- **BGP wait under stress**: Keeping all CPUs pegged during reload makes the built-in BGP wait in config_reload unrealistic at scale; the test needs to drop load before asserting BGP is up.\r\n\r\n#### How did you do it?\r\n\r\n- **Syslog / LogAnalyzer**: avoids requiring a separate mandatory regex match per LAG when total number of PCs exceeds a threshold as shown below, because _rsyslog_ can drop lines under load and the test cannot tell a drop from a missing SIGTERM.\r\n         n_pc \u2264 64: unchanged - still require per-LAG SIGTERM patterns (feasible, low syslog pressure).\r\n         n_pc > 64: use one broad SIGTERM pattern plus stratified mandatory per-name patterns for a fixed sample of LAGs (_spread across indices_), so we st",
+   "reviews": [],
+   "comments": [],
+   "createdAt": "2026-06-04T17:16:14Z"
+  },
+  "25134": {
+   "num": 25134,
+   "title": "[conditional_mark]: Enable NTP IPv6-only management test on sonic-vpp",
+   "login": "lunyue-ms",
+   "affil": "Microsoft",
+   "affil_src": "login-suffix",
+   "add": 0,
+   "dele": 11,
+   "nfiles": 1,
+   "files": [
+    "tests/common/plugins/conditional_mark/tests_mark_conditions_sonic_vpp.yaml"
+   ],
+   "body": "### Description of PR\r\n<!--\r\n- Please include a summary of the change and which issue is fixed.\r\n- Please also include relevant motivation and context. Where should reviewer start? background context?\r\n- List any dependencies that are required for this change.\r\n-->\r\n\r\nSummary:\r\nRemove the stale VPP conditional skip for `ip/test_mgmt_ipv6_only.py::test_ntp_ipv6_only`.\r\n\r\nThe test does not contain any VPP-specific skip logic in code and now passes on the SONiC-VPP KVM testbed. Keeping it skipped in `tests_mark_conditions_sonic_vpp.yaml` unnecessarily excludes IPv6-only NTP management coverage from `t1-lag-vpp` PR testing.\r\n\r\nFixes sonic-net/sonic-buildimage#25768\r\n\r\n### Type of change\r\n\r\n- [ ] Bug fix\r\n- [x] Testbed and Framework(new/improvement)\r\n- [ ] New Test case\r\n    - [ ] Skipped for non-supported platforms\r\n- [ ] Test case improvement\r\n\r\n### Back port request\r\n\r\n- [ ] 202311\r\n- [ ] 202405\r\n- [ ] 202411\r\n- [ ] 202505\r\n- [ ] 202511\r\n- [ ] 202512\r\n- [ ] 202605\r\n\r\n### Approach\r\n\r\n#### What is the motivation for this PR?\r\n\r\n`tests_mark_conditions_sonic_vpp.yaml` still skipped `test_ntp_ipv6_only` for `asic_type == 'vpp'` with the placeholder reason `Failed/Errored: To be included`.\r\n\r\nThe test itself has no VPP-specific skip or limitation, and `t1-lag-vpp` already includes `ip/test_mgmt_ipv6_only.py` in PR test selection. Removing this stale skip enables the existing IPv6-only NTP management coverage on SONiC-VPP.\r\n\r\n#### How did you do it?\r\n\r\nRemoved the `ip/test_mgmt_ipv6_only.py::test_ntp_ipv6_only` skip block from `tests/common/plugins/conditional_mark/tests_mark_conditions_sonic_vpp.yaml`.\r\n\r\nAlso removed the now-empty `IP` section header from that file.\r\n\r\n#### How did you verify/test it?\r\n\r\nVerified that the test code has no VPP-specific skip logic.\r\n\r\nRan `ip/test_mgmt_ipv6_only.py::test_ntp_ipv6_only` locally on `vlab-vpp-01`\r\n(vms-kvm-vpp-t1-lag):\r\n\r\n```text\r\nip/test_mgmt_ipv6_only.py::test_ntp_ipv6_only[True] PASSED               [100%]\r\n```\r\n\r\nAlso ran `ip/test_mgmt_ipv6_only.py` on the same testbed:\r\n\r\n```text\r\n=========== 9 passed, 1 skipped, 549 warnings in 2078.11s (0:34:38) ============\r\n```\r\n\r\nThe skipped cases are unrelated to this VPP conditional mark removal.\r\n\r\n#### Any platform specific information?\r\n\r\nThis only affects SONiC-VPP conditional marking. Other ASIC platforms are unchanged.\r\n\r\n#### Supported testbed topology if it's a new test case?\r\n\r\nN/A. This is not a new test case.\r\n\r\nValidated on:\r\n\r\n```text\r\nvms-kvm-vpp-t1-lag / vla",
+   "reviews": [],
+   "comments": [],
+   "createdAt": "2026-06-05T00:36:20Z"
+  }
+ },
+ "global_index": [
+  {
+   "num": 23930,
+   "title": "Update variables",
+   "files": [
+    "ansible/group_vars/sonic/variables"
+   ],
+   "nfiles": 1
+  },
+  {
+   "num": 24320,
+   "title": "changes for port speed test enhancement",
+   "files": [
+    "tests/generic_config_updater/add_cluster/test_port_speed_change.py"
+   ],
+   "nfiles": 1
+  },
+  {
+   "num": 24437,
+   "title": "save pfcwd_timer_accuracy test result to file",
+   "files": [
+    "tests/pfcwd/conftest.py",
+    "tests/pfcwd/test_pfcwd_timer_accuracy.py"
+   ],
+   "nfiles": 2
+  },
+  {
+   "num": 24493,
+   "title": "Update the gNMI setup without authentication for liquid cooling case",
+   "files": [
+    "tests/common/helpers/liquid_leakage_control_test_helper.py"
+   ],
+   "nfiles": 1
+  },
+  {
+   "num": 24545,
+   "title": "Fix test_monitoring_critical_processes timeout by killing database container last",
+   "files": [
+    "tests/common/plugins/conditional_mark/tests_mark_conditions.yaml",
+    "tests/process_monitoring/test_critical_process_monitoring.py"
+   ],
+   "nfiles": 2
+  },
+  {
+   "num": 24597,
+   "title": "Update the fanout switch deploy step due to lack of /etc/sysctl.conf",
+   "files": [
+    "ansible/roles/fanout/tasks/fanout_sonic.yml",
+    "ansible/roles/fanout/tasks/sonic/fanout_sonic_202511.yml"
+   ],
+   "nfiles": 2
+  },
+  {
+   "num": 24787,
+   "title": "[platform_tests][T2] Add test_sup_fan_recovery.py to verify sup fan status after config reload + cold reboot",
+   "files": [
+    "tests/platform_tests/test_sup_fan_recovery.py"
+   ],
+   "nfiles": 1
+  },
+  {
+   "num": 24829,
+   "title": "Fix: add port name for acl interface parsing",
+   "files": [
+    "ansible/library/minigraph_facts.py"
+   ],
+   "nfiles": 1
+  },
+  {
+   "num": 24845,
+   "title": "ARS test script",
+   "files": [
+    "ansible/roles/test/files/ptftests/py3/arstest.py",
+    "tests/common/plugins/conditional_mark/tests_mark_conditions.yaml",
+    "tests/ecmp/ars/__init__.py",
+    "tests/ecmp/ars/acl.json",
+    "tests/ecmp/ars/ars.json",
+    "tests/ecmp/ars/conftest.py",
+    "tests/ecmp/ars/test_ars.py"
+   ],
+   "nfiles": 7
+  },
+  {
+   "num": 24876,
+   "title": "lldp_syncd failure due to not enough converge time",
+   "files": [
+    "tests/lldp/test_lldp_syncd.py"
+   ],
+   "nfiles": 1
+  },
+  {
+   "num": 24884,
+   "title": "[bgp scale] Reduce DUT-side observer load during route convergence tests",
+   "files": [
+    "tests/bgp/test_ipv6_bgp_scale.py"
+   ],
+   "nfiles": 1
+  },
+  {
+   "num": 24902,
+   "title": "Handle pytest.fail.Exeption in wait_until",
+   "files": [
+    "tests/common/utilities.py"
+   ],
+   "nfiles": 1
+  },
+  {
+   "num": 24927,
+   "title": "Fix test_link_local_ip failures in dualtor active-active topology",
+   "files": [
+    "tests/ip/link_local/test_link_local_ip.py"
+   ],
+   "nfiles": 1
+  },
+  {
+   "num": 24930,
+   "title": "[vxlan] Improve vnet bgp subintf cleanup diagnostics",
+   "files": [
+    "tests/vxlan/test_vxlan_vnet_bgp_subintf.py"
+   ],
+   "nfiles": 1
+  },
+  {
+   "num": 24975,
+   "title": "Fix the NTP polling step in deploy-mg playbook",
+   "files": [
+    "ansible/config_sonic_basedon_testbed.yml"
+   ],
+   "nfiles": 1
+  },
+  {
+   "num": 25000,
+   "title": "Fix test_srv6_vlan_forwarding when no ipv6 mgmt for ptf docker",
+   "files": [
+    "tests/srv6/test_srv6_vlan_forwarding.py"
+   ],
+   "nfiles": 1
+  },
+  {
+   "num": 25012,
+   "title": "Fixing PMON status test failures",
+   "files": [
+    "tests/platform_tests/daemon/conftest.py",
+    "tests/platform_tests/daemon/test_chassisd.py",
+    "tests/platform_tests/daemon/test_fancontrol.py",
+    "tests/platform_tests/daemon/test_ledd.py",
+    "tests/platform_tests/daemon/test_pcied.py",
+    "tests/platform_tests/daemon/test_psud.py",
+    "tests/platform_tests/daemon/test_syseepromd.py"
+   ],
+   "nfiles": 7
+  },
+  {
+   "num": 25040,
+   "title": "[bgp/agg] Make BGP aggregate-address tests solid against per-DUT flakiness",
+   "files": [
+    "tests/bgp/bgp_aggregate_helpers.py",
+    "tests/bgp/test_bgp_aggregate_address.py",
+    "tests/bgp/test_bgp_aggregate_address_bbr_dynamics.py",
+    "tests/bgp/test_bgp_aggregate_address_scale_stress.py"
+   ],
+   "nfiles": 4
+  },
+  {
+   "num": 25094,
+   "title": "Add disable_memory_utilization option for fwutil test cases",
+   "files": [
+    "tests/platform_tests/fwutil/test_fwutil.py"
+   ],
+   "nfiles": 1
+  },
+  {
+   "num": 25123,
+   "title": "[TH6] test_po_cleanup fix for large number of lags(100s)",
+   "files": [
+    "tests/pc/test_po_cleanup.py"
+   ],
+   "nfiles": 1
+  },
+  {
+   "num": 25134,
+   "title": "[conditional_mark]: Enable NTP IPv6-only management test on sonic-vpp",
+   "files": [
+    "tests/common/plugins/conditional_mark/tests_mark_conditions_sonic_vpp.yaml"
+   ],
+   "nfiles": 1
+  }
+ ],
+ "overlaps": {
+  "24545": [
+   "24845"
+  ],
+  "24845": [
+   "24545"
+  ]
+ }
+}

@@ -1,0 +1,228 @@
+# Review-tracking policy & procedure
+
+A repeatable, **context-aware** procedure for triaging open PRs where a given
+GitHub user is a requested reviewer. It sweeps the review queue, takes the
+right action for each PR's state, **records every action it takes**, and uses
+that record so it never repeats an action (no duplicate "you have merge
+conflicts" pings, no repeated `/azp run`).
+
+This document is the canonical policy. Per-tracked-repo data, generated tables,
+and helpers live under that repo's subdirectory (e.g. `sonic-mgmt-prs/`).
+
+---
+
+## 1. Scope
+
+- **Input:** open PRs on a target repo where a configured GitHub login is a
+  *requested reviewer* (first tracked target: `sonic-net/sonic-mgmt`,
+  reviewer `bhouse-nexthop`).
+- **Goal:** keep the queue moving — get stuck PRs unstuck (conflicts, stale
+  CI), surface failures to authors, and deep-review the PRs that are actually
+  ready, while never spamming authors with repeated identical nudges.
+- **Boundaries:** we do **not** approve/merge PRs automatically. Deep-review
+  briefs are decision support for the human reviewer. Approvals are human.
+
+---
+
+## 2. Definitions
+
+| Term | Meaning |
+|------|---------|
+| **Clean** | `mergeable == MERGEABLE` (no merge conflicts with the base branch). |
+| **Conflicting** | `mergeable == CONFLICTING`. |
+| **Last CI** | The max `completedAt` across the PR's status-check rollup. |
+| **Stale CI** | Last CI run is **> 2 weeks** before the sweep date. |
+| **Fresh / eligible** | Clean **and** latest CI = PASS **and** last CI within 2 weeks. Only these get deep-reviewed (Rule 4). |
+| **Action ledger** | Append-only record of every action we take per PR (see §3). The source of truth for "what have we already done?" |
+| **Episode** | A continuous span in one state. A new `/azp run` is allowed only in a *new* CI episode (a fresh run has completed since our last one); a new conflict ping only in a *new* conflict episode. |
+
+---
+
+## 3. The action ledger (context-awareness)
+
+Every action is appended to `<repo>/actions.jsonl`, one JSON object per line:
+
+```json
+{"pr": 24416, "action": "conflict_ping", "date": "2026-06-10", "detail": "<comment url>"}
+{"pr": 24802, "action": "azp_run",       "date": "2026-06-10", "detail": "<comment url>"}
+{"pr": 25012, "action": "deep_review",   "date": "2026-06-10", "detail": "review-findings-2026-06-10.md"}
+{"pr": 21144, "action": "ci_fail_notify","date": "2026-06-24", "detail": "<comment url>"}
+```
+
+Action types: `conflict_ping`, `azp_run`, `ci_fail_notify`, `deep_review`,
+`escalate`.
+
+**Golden rule — check the ledger before acting.** No rule fires for a PR if an
+equivalent action already exists for the current episode. This is what stops
+repeated pings and repeated `/azp run`. Concretely:
+
+- **`conflict_ping`** — only if the PR is conflicting *and* there is no
+  `conflict_ping` since the PR last entered the conflicting state. If it was
+  pinged, conflicts persist, and the author has been silent past the
+  **escalation window (14 days)**, do **not** re-ping — emit `escalate`
+  (surface to the human) instead.
+- **`azp_run`** — only if no `azp_run` exists whose date is *after* the current
+  Last-CI timestamp. I.e. re-run only once per CI episode: if we already
+  triggered a run and a new run has since completed, that episode is closed.
+- **`ci_fail_notify`** — only once per failing CI episode (keyed off the
+  failing run's `completedAt`); re-notify only when a *newer* failing run
+  appears.
+- **`deep_review`** — only if the PR has had no `deep_review`, **or** the PR
+  head SHA changed since the last review (substantive new commits warrant a
+  re-review). Trivial rebases don't.
+
+---
+
+## 4. Sweep procedure (run each cycle)
+
+1. **Fetch** all requested-reviewer PRs + per-PR CI status, reviews, mergeable,
+   changed files, head SHA.
+2. **Resolve mergeability.** GitHub computes `mergeable` lazily — the first
+   query often returns `UNKNOWN`. Query once to trigger computation, then
+   re-poll until every PR resolves to `MERGEABLE`/`CONFLICTING`. (See §7.)
+3. **Load the ledger** (`actions.jsonl`).
+4. **Classify** each PR and apply the first matching rule below, **gated by the
+   ledger** (§3). Append any action taken to the ledger.
+5. **Regenerate** the tracking table and findings (`gen_table.py`).
+6. **Report** to the human: new actions taken, escalations, and the current
+   eligible-for-review set.
+
+### Decision order per PR
+
+```
+if CONFLICTING:                      -> Rule 1 (ping author, once per episode; else escalate)
+elif CI == FAIL:
+    if we previously azp_run'd this failing episode: -> Rule 5 (notify author of failure)
+    else:                            -> Rule 3 (azp_run once)
+elif CI == PASS and stale:           -> Rule 2 (azp_run once)
+elif CI == PASS and fresh:           -> Rule 4 (deep review, if not already reviewed)
+elif CI == PENDING:                  -> no-op (a run is in flight; wait for next sweep)
+```
+
+---
+
+## 5. Rules
+
+### Rule 1 — Conflicting → ping the author (once per episode)
+- **Trigger:** `CONFLICTING` and no `conflict_ping` in the current conflict
+  episode.
+- **Action:** comment asking the author to confirm relevance and rebase; record
+  `conflict_ping`. Re-running CI is pointless until they rebase, so we do *not*
+  `/azp run` a conflicting PR.
+- **Template:**
+  > Hi @{author}, this PR currently has merge conflicts with the target branch.
+  > Could you confirm whether it's still relevant/active? If so, please rebase
+  > and resolve the conflicts, and we'll review it. Thanks!
+- **No repeats:** if already pinged and still conflicting, stay silent until the
+  escalation window (14 days of author silence) elapses, then `escalate` to the
+  human — never auto-re-ping.
+
+### Rule 2 — Clean + stale CI → force a fresh run (once per episode)
+- **Trigger:** `MERGEABLE`, last CI > 2 weeks old, and no `azp_run` after the
+  current Last-CI timestamp.
+- **Action:** post `/azp run`; record `azp_run`.
+
+### Rule 3 — Clean + failing CI, not yet retried → force a fresh run
+- **Trigger:** `MERGEABLE`, CI = FAIL, no `azp_run` in this failing episode.
+- **Action:** post `/azp run` (a stale/old failure may be a flake or already
+  fixed upstream; re-running confirms the real state); record `azp_run`. On the
+  next sweep this PR resolves to Rule 4 (if it goes green) or Rule 5 (if it
+  fails again).
+
+### Rule 4 — Fresh PR → deep review
+- **Trigger:** `MERGEABLE`, CI = PASS, fresh (within 2 weeks), and no
+  `deep_review` for the current head SHA.
+- **Action:** produce a **review brief** (one per PR) and record `deep_review`.
+  Present briefs to the human; do not approve.
+- **Brief fields:** (1) description summary; (2) existing reviews/comments;
+  (3) author affiliation (see §8); (4) type — Bug fix / Feature enhancement /
+  New test suite / mix; (5) complexity — Low/Med/High; (6) matches description?
+  — Yes/Partial/No + note; (7) conflict likelihood vs other open PRs (name
+  overlaps); (8) duplication likelihood (name suspected dup or "none seen");
+  plus a one-line reviewer flag.
+- **Conflict/duplication seeding:** compute changed-file overlap across the
+  eligible set deterministically; use that to seed fields 7–8, then reason over
+  the diffs.
+
+### Rule 5 — Post-`/azp run` follow-up (failure path) → notify the author
+- **Trigger:** a PR we previously `/azp run` (Rule 2 or 3) comes back **FAIL**
+  on the fresh run, and no `ci_fail_notify` exists for this failing episode.
+- **Action:** comment notifying the author that CI failed after a re-run and
+  asking them to investigate; record `ci_fail_notify`.
+- **Template:**
+  > Hi @{author}, we re-triggered CI on this PR and it's still failing. Could
+  > you take a look at the latest run and address the failures? Once CI is green
+  > we'll proceed with review. Thanks!
+- **Success path** (the other outcome of a re-run): if the PR comes back clean +
+  passing + fresh, it simply becomes eligible and flows into Rule 4 on the same
+  or next sweep — no separate action needed.
+- **No repeats:** one notify per failing episode; re-notify only on a *newer*
+  failing run.
+- **Future enhancement (not yet implemented):** before notifying, pull the
+  failing job logs and match against known sonic-mgmt **spurious-failure
+  patterns**; if the failure matches a known flake, `/azp run` again (within a
+  retry cap) instead of bothering the author, and only notify on a
+  non-spurious / persistent failure.
+
+---
+
+## 6. State transitions (lifecycle of one PR)
+
+```
+                         ┌─────────────┐
+                         │ CONFLICTING │──ping(once)──▶ wait │ silent 14d ▶ ESCALATE
+                         └─────────────┘
+   (author rebases) ───────────▼
+                         ┌─────────────┐  stale/old-fail   ┌──────────┐
+                         │   CLEAN     │───── /azp run ────▶│ PENDING  │
+                         └─────────────┘    (once/episode) └────┬─────┘
+                              ▲                                  │
+                   green again│                    ┌─────────────┴─────────────┐
+                              │                    ▼                           ▼
+                         ┌─────────┐          CI PASS+fresh                 CI FAIL
+                         │ELIGIBLE │◀───────────────                   notify author (once)
+                         └────┬────┘                                        │
+                              │ deep review (once/SHA)                      ▼
+                              ▼                                        wait for author
+                         REVIEW BRIEF ──▶ human triage / approval
+```
+
+Idempotency is enforced at every arrow by the ledger (§3).
+
+---
+
+## 7. Mergeability caveat
+GitHub computes `mergeable` lazily — the first API query usually returns
+`UNKNOWN`. Trigger computation with one pass of queries, then re-poll until
+every PR resolves to `MERGEABLE`/`CONFLICTING`. Never act on `UNKNOWN`.
+
+## 8. Author-affiliation resolution
+Resolve in this order; mark **"unknown"** (never guess) if none apply:
+1. GitHub profile `company` field.
+2. Verified public email domain.
+3. Login-suffix convention: `-nexthop`→NextHop, `-arista`→Arista,
+   `-cisco`→Cisco, `-nv`/`-nvidia`→NVIDIA, `-ms`/`-msft`/`-microsoft`→Microsoft,
+   `-nokia`→Nokia, `[Marvell]`/`-marvell`→Marvell, etc.
+4. Org membership.
+
+## 9. The `/azp run` command
+Plain **`/azp run`** queues a *new* run of **all** repo pipelines (new run
+number, picks up current YAML/config) — a full re-run. This is what we want.
+The GitHub "Re-run failed checks" UI button only retries failed checks against
+the *old* run and is **not** equivalent. `/azp run` is also the repo convention
+(`mssonicbld` posts it). It is permission-gated (Azure DevOps) and its response
+only renders if the repo uses the Azure Pipelines GitHub App — if a comment has
+no effect, the commenter may lack trigger rights.
+
+## 10. Artifacts & helpers (per tracked repo)
+- `review-queue.md` — generated tracking table (status + follow-up column).
+- `review-findings-<date>.md` — deep-review briefs for that sweep.
+- `actions.jsonl` — the append-only action ledger (§3).
+- `helpers/` — the sweep scripts and table generator.
+- `data/` — raw JSON/TSV snapshots from the last sweep (for reproducibility;
+  may be gitignored if noisy).
+
+## 11. Change log
+- **2026-06-10** — initial policy. Rules 1–4 established during the first
+  sonic-mgmt sweep; Rule 5 (post-`/azp run` follow-up) and the action-ledger
+  idempotency model added the same day.
