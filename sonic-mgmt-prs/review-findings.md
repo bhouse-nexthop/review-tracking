@@ -2,18 +2,8 @@
 
 **PRs awaiting our action**, sorted by recommendation — each links to its full brief (click → read → back → next). A PR drops off this doc once it's **approved/merged** or **handed back to the author** (changes/info/evidence requested, conflicting, COI-waiting); full state + history live in `actions.jsonl` + git. Recommendations fold in: does the diff match the description, complexity, **author trust** (§8.1), and **whether CI actually runs the test** (a green check on a skipped test proves nothing — see CI column). _Decision support; approval is the human reviewer's call._
 
-**Tally:** Approve: 6 · Request changes: 3 · Needs hardware-pass evidence: 10 · Get another opinion: 5 · Blocked (COI): 2 · _Awaiting author (off-doc): #24975 (changes requested — dead sleep)_
-
-## Approve (6)
-
-| PR | Title | Type/Trust | CI runs test? | Why |
-|----|-------|-----------|---------------|-----|
-| [#23930](#pr-23930) | [ansible] Add Juniper-QFX5241-64-OD hwsku to B… | Feature (hwsku) / Unproven | N-A (variables) | vendor-own-hardware exception (Juniper enabling Juniper hwsku) |
-| [#24493](#pr-24493) | Update the gNMI setup without authentication f… | Bug fix / Expert | No (device_type physical) | vendor-own-hardware (NVIDIA/Mellanox liquid-cooling), Expert, clean |
-| [#24545](#pr-24545) | Fix test_monitoring_critical_processes timeout… | Bug fix / Expert | Yes | CI-validated (runs on KVM); fixes a 365-day-dead test |
-| [#24597](#pr-24597) | Update the fanout switch deploy step due to la… | Bug fix / Expert | N-A (ansible infra) | ansible deploy-step fix; not pytest-gated; Expert NVIDIA author, low risk |
-| [#24876](#pr-24876) | lldp_syncd failure due to not enough converge … | Bug fix (flake) / Unproven | Yes | CI-validated; sound flake fix (author Unproven but CI covers it) |
-| [#25134](#pr-25134) | [conditional_mark]: Enable NTP IPv6-only manag… | Bug fix (enable) / Medium | Yes (confirm vpp job ran) | CI-validated on t1-lag-vpp; confirm that job triggered |
+**Tally:** Request changes: 3 · Needs hardware-pass evidence: 10 · Get another opinion: 5 · Blocked (COI): 2  
+_(6 approved & merged-track this cycle: #23930, #24493, #24545, #24597, #24876, #25134 — now off-doc; #24975 awaiting author.)_
 
 ## Request changes (3)
 
@@ -60,120 +50,6 @@
 ## Briefs
 
 _Ordered by recommendation, same as above._
-
-<a id="pr-23930"></a>
-
-### [PR #23930](https://github.com/sonic-net/sonic-mgmt/pull/23930) — [ansible] Add Juniper-QFX5241-64-OD hwsku to Broadcom testbed variables
-- **➡ Recommendation:** Approve — vendor-own-hardware exception (Juniper enabling Juniper hwsku)
-- **Author / affiliation:** SaiYasaswiniP / Juniper Networks
-- **Trust:** Unproven (Juniper)
-- **CI runs the test?:** N-A (variables)
-- **Type:** Feature enhancement (testbed/framework — new hwsku registration)
-- **Complexity:** Low — single file, +2/-2, appends one hwsku string to two existing lists in `ansible/group_vars/sonic/variables`. Shared variables file but purely additive.
-- **Description summary:** Adds the Juniper Broadcom-based hwsku `Juniper-QFX5241-64-OD` to the testbed's Broadcom hwsku registries so the platform is recognized. Title/description are minimal.
-- **Existing reviews/comments:** No formal reviews. EasyCLA signed. yxieca asked about a pre-test failure (author: unrelated pytest_cache permission error). vmittal-msft asked the author to add a master PR and make the title/description more descriptive — not yet addressed.
-- **Matches description?:** Yes — adds the hwsku to `broadcom_hwskus` and `broadcom_th5_hwskus`. No scope creep.
-- **Conflict likelihood:** Low — file-isolated.
-- **Duplication likelihood:** none seen.
-- **Reviewer notes:** Additive and self-consistent; the author is from Juniper registering a Juniper hwsku, so the chip-generation classification is theirs to make — defer to them on it. The only open items are process: vmittal-msft asked for a descriptive title and a companion master PR.
-- **Suggested recommendation:** Approve — additive vendor hwsku from the vendor; only the title/master-PR process items remain
-
-[↑ back to recommendations](#deep-review-findings--sonic-netsonic-mgmt--2026-06-10)
-
-<a id="pr-24493"></a>
-
-### [PR #24493](https://github.com/sonic-net/sonic-mgmt/pull/24493) — Update the gNMI setup without authentication for liquid cooling case
-- **➡ Recommendation:** Approve — vendor-own-hardware (NVIDIA/Mellanox liquid-cooling), Expert, clean
-- **Author / affiliation:** JibinBao / NVIDIA
-- **Trust:** Expert (Nvidia)
-- **CI runs the test?:** No (device_type physical)
-- **Type:** Bug fix
-- **Complexity:** Low — single helper file, +2/-10, narrow blast radius.
-- **Description summary:** Simplifies liquid-cooling gNMI setup by skipping gNMI auth: adds `-n` (no-auth) to the `py_gnmicli.py` subscribe call and removes client-cert/`client_auth true` setup, so the test only verifies events are received. Claims auth coverage remains via other suites.
-- **Existing reviews/comments:** nhe-NV — APPROVED (no comment).
-- **Matches description?:** Yes — adds `-n`, deletes cert HSETs + `client_auth true`, updates docstring; coherent with no-auth.
-- **Conflict likelihood:** Low — file-isolated.
-- **Duplication likelihood:** none seen.
-- **Reviewer notes:** Clean. Human may confirm the claim that auth coverage is preserved in `test_gnmi.py` (not verifiable from this diff).
-- **Suggested recommendation:** Approve — narrow, coherent no-auth change, approved by nhe-NV
-
-[↑ back to recommendations](#deep-review-findings--sonic-netsonic-mgmt--2026-06-10)
-
-<a id="pr-24545"></a>
-
-### [PR #24545](https://github.com/sonic-net/sonic-mgmt/pull/24545) — Fix test_monitoring_critical_processes timeout by killing database container last
-- **➡ Recommendation:** Approve — CI-validated (runs on KVM); fixes a 365-day-dead test
-- **Author / affiliation:** xwjiang-ms / Microsoft
-- **Trust:** Expert (Microsoft)
-- **CI runs the test?:** Yes
-- **Type:** Bug fix
-- **Complexity:** Medium — 2 files, +164/-45; logic rewrite of one test + recovery fixture; touches shared `tests_mark_conditions.yaml` (one stanza deleted).
-- **Description summary:** PR #21889 added `database` to the critical-process kill list; alphabetical iteration kills it early, redis death hangs subsequent SSH → external timeout (0 passes in 365 days). Fix splits into two phases (kill non-database first with loganalyzer verify, then database last, skip syslog verify, let recovery fixture reboot) and removes the obsolete xfail/skip YAML entry.
-- **Existing reviews/comments:** StormLiangMS (approved after 5 substantive + 4 nits addressed); ZhaohuiS (positive); lipxu raised per-ASIC `database0/1` containers (now handled via `re.fullmatch(r"database(\d+)?")`); author self-flagged a multi-ASIC VS SysRq timing race; yxieca AI note on skip/xfail logic.
-- **Matches description?:** Yes — two-phase kill + YAML removal + database-last recovery. Undisclosed-but-reasonable extras: KVM→`is_vs_device` broadening, multi/single-ASIC SysRq handling, new `database_config.json`-wait + `config_reload` recovery.
-- **Conflict likelihood:** Med — shares `tests_mark_conditions.yaml` with #24845 in non-overlapping regions → textual rebase at worst, no semantic conflict.
-- **Duplication likelihood:** none seen.
-- **Reviewer notes:** (1) Multi-ASIC VS recovery hinges on a fixed `MULTI_ASIC_VS_REBOOT_DELAY_SEC=15` pre-scheduled SysRq — confirm robust on slow/loaded VS. (2) Recovery now waits for `database_config.json` + `config_reload(wait_for_bgp=True)` instead of verifying interfaces up — a real reduction in post-recovery assertion; conscious sign-off.
-- **Suggested recommendation:** Approve — fixes a 365-day-dead test; substantive feedback addressed and two approvals — note the VS timing assumption
-
-[↑ back to recommendations](#deep-review-findings--sonic-netsonic-mgmt--2026-06-10)
-
-<a id="pr-24597"></a>
-
-### [PR #24597](https://github.com/sonic-net/sonic-mgmt/pull/24597) — Update the fanout switch deploy step due to lack of /etc/sysctl.conf
-- **➡ Recommendation:** Approve — ansible deploy-step fix; not pytest-gated; Expert NVIDIA author, low risk
-- **Author / affiliation:** echuawu / NVIDIA (Nvidia Networking)
-- **Trust:** Expert (Nvidia)
-- **CI runs the test?:** N-A (ansible infra)
-- **Type:** Bug fix
-- **Complexity:** Medium — 2 files, +215/-1, mostly a new 204-line task file copied from the 202505 flow; touches the shared `fanout` role dispatcher.
-- **Description summary:** SONiC 202511 images no longer ship `/etc/sysctl.conf` (IPv6-disable config moved to `/usr/lib/sysctl.d/90-sonic.conf`), so the existing IPv6 step fails during fanout deploy. Adds `fanout_sonic_202511.yml` targeting the new path and wires it via a `'202511' in build_version` branch.
-- **Existing reviews/comments:** nhe-NV — APPROVED. yxieca non-blocking AI note (false-positive skip/disable trigger).
-- **Matches description?:** Yes — sysctl path fix present. Undisclosed-but-required extra: dispatcher guard tightened `'2025'`→`'202505'` so 202511 doesn't also match 202505.
-- **Conflict likelihood:** Low — file-isolated (new file + 1-line dispatcher edit).
-- **Duplication likelihood:** none seen.
-- **Reviewer notes:** Confirm (1) the new file references template `sonic_deploy_202505.j2` (carried over) is intentional, not a stale name; (2) the IPv6 block runs only for asic_type in `[marvell-teralynx, mellanox, broadcom]` — other 202511 fanout asics silently skip IPv6 disabling.
-- **Suggested recommendation:** Approve — correct sysctl-path fix, approved; just confirm the carried-over template name
-
-[↑ back to recommendations](#deep-review-findings--sonic-netsonic-mgmt--2026-06-10)
-
-<a id="pr-24876"></a>
-
-### [PR #24876](https://github.com/sonic-net/sonic-mgmt/pull/24876) — lldp_syncd failure due to not enough converge time
-- **➡ Recommendation:** Approve — CI-validated; sound flake fix (author Unproven but CI covers it)
-- **Author / affiliation:** Yogapriya-cisco / Cisco
-- **Trust:** Unproven (Cisco)
-- **CI runs the test?:** Yes
-- **Type:** Bug fix (test stabilization / flake fix)
-- **Complexity:** Low — single file, +57/-0, one module-scoped autouse fixture; no shared-lib changes.
-- **Description summary:** Adds `wait_for_lldp_appl_db` autouse fixture that polls `lldpctl` until the neighbor set is stable, then waits for APPL_DB `LLDP_ENTRY_TABLE` to cover it — stopping intermittent flakes from `lldpd`/APPL_DB still converging after a prior test's config reload.
-- **Existing reviews/comments:** ZhaohuiS — APPROVED (asked about t0/t1; author confirmed t0). prhoskot — APPROVED. vrajeshe pinged for merge.
-- **Matches description?:** Yes — two-phase stabilization; all helpers already exist.
-- **Conflict likelihood:** Low — file-isolated.
-- **Duplication likelihood:** none seen.
-- **Reviewer notes:** Cosmetic nit: stability gate uses `stable_count > 2` (≈4 identical reads), more conservative than the "2 consecutive polls" the comment claims. Two approvals; sound flake fix.
-- **Suggested recommendation:** Approve — sound flake fix with two approvals; only a cosmetic comment/code nit
-
-[↑ back to recommendations](#deep-review-findings--sonic-netsonic-mgmt--2026-06-10)
-
-<a id="pr-25134"></a>
-
-### [PR #25134](https://github.com/sonic-net/sonic-mgmt/pull/25134) — [conditional_mark]: Enable NTP IPv6-only management test on sonic-vpp
-- **➡ Recommendation:** Approve — CI-validated on t1-lag-vpp; confirm that job triggered
-- **Author / affiliation:** lunyue-ms / Microsoft
-- **Trust:** Medium (Microsoft)
-- **CI runs the test?:** Yes (confirm vpp job ran)
-- **Type:** Bug fix (test-enablement — removes a stale skip)
-- **Complexity:** Low — single file, 0 add / 11 del; removes a YAML skip block + an empty section header.
-- **Description summary:** Removes the stale VPP conditional skip for `ip/test_mgmt_ipv6_only.py::test_ntp_ipv6_only` (placeholder reason "Failed/Errored: To be included"). The test has no VPP-specific skip logic and now passes on the SONiC-VPP KVM testbed, so the skip needlessly excluded IPv6-only NTP coverage.
-- **Existing reviews/comments:** None.
-- **Matches description?:** Yes — exactly the deletion of the skip block + orphaned header.
-- **Conflict likelihood:** Low — file-isolated (other conditional_mark PRs touch a different file).
-- **Duplication likelihood:** none seen.
-- **Reviewer notes:** Links `Fixes sonic-net/sonic-buildimage#25768` but verification is a single local pass on `vlab-vpp-01` — re-enabling a previously-skipped test risks re-introducing flakiness in gating if it isn't stable across runs.
-- **Suggested recommendation:** Approve — low-risk re-enable of skipped coverage; watch for gating flakiness after merge
-
-[↑ back to recommendations](#deep-review-findings--sonic-netsonic-mgmt--2026-06-10)
 
 <a id="pr-24247"></a>
 
