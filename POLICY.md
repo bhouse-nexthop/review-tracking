@@ -388,6 +388,8 @@ approval — see preconditions), applying these rules.
   rationale is on the public record and others can see what our approval did (and
   didn't) rest on. Include:
   1. **PR type** — bug fix / feature / new test / test improvement / backport / doc.
+  1b. **Backport branches** — for each `Request for <branch>` label, which we
+     approved (flipped to `Approved for <branch>`) vs rejected, and why.
   2. **Did CI actually run the test and pass?** — the crucial item. If **yes**,
      say so and name the job/topology (e.g. "exercised on the t1-lag-vpp PR-gate
      job"). If CI does **not** exercise the test (Rule 4 field 9b — hardware-only,
@@ -398,6 +400,22 @@ approval — see preconditions), applying these rules.
   Keep it brief. This is what makes an approval auditable and stops a misleading
   green check from being mistaken for validation. (The summary lives on the PR;
   GitHub records the approval — no ledger entry needed.)
+- **Backport branch labels — evaluate the request and flip it on approval.** SONiC
+  uses `Request for <branch> branch` (backport requested) → `Approved for <branch>
+  branch` (a maintainer OK'd it; the `mssonicbld` cherry-pick bot acts on the
+  *Approved* labels at merge) or `Reject for <branch> branch`. **When we approve a
+  PR, for each `Request for <branch>` label:**
+  1. **Evaluate validity** — is `<branch>` an active/supported release branch, does
+     the change actually apply there (the bug/code path exists; it's an appropriate
+     bug/test fix for a stable branch, not a feature into a frozen one), and is the
+     author's backport intent reasonable?
+  2. **Valid →** add the matching `Approved for <branch> branch` label so the bot
+     cherry-picks on merge. **Invalid →** add `Reject for <branch> branch` and say
+     why (branch EOL, change doesn't apply, not backport-appropriate).
+  3. Record the per-branch decisions in the approval summary comment.
+  Don't approve a backport branch we haven't actually vetted. `sweep.py --branch-eval
+  <PR>` lists the requested branches and the exact label names to apply;
+  `gh pr edit <PR> --add-label '<label>'` applies them.
 - **Remove from tracking once approved.** As soon as we approve a PR, it **drops
   out of `review-findings.md`** (the single human doc) — see §10. We don't keep
   stale "approved"/"merged" rows; the approval summary comment, GitHub's record, and

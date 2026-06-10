@@ -388,7 +388,7 @@ def fetch_prs():
     for n in nums:
         d = gh_json(["pr", "view", str(n), "--repo", REPO, "--json",
                      "number,title,author,mergeable,statusCheckRollup,reviews,"
-                     "headRefOid,isDraft,body,baseRefName,updatedAt"])
+                     "headRefOid,isDraft,body,baseRefName,updatedAt,labels"])
         detail.append(d)
     return detail
 
@@ -809,6 +809,37 @@ TICKLER_MSG = {
 }
 
 
+_repo_labels = None
+
+
+def repo_label_names():
+    global _repo_labels
+    if _repo_labels is None:
+        out = subprocess.run(["gh", "api", f"repos/{REPO}/labels", "--paginate",
+                              "--jq", ".[].name"], capture_output=True, text=True)
+        _repo_labels = [x for x in out.stdout.splitlines() if x.strip()]
+    return _repo_labels
+
+
+def branch_requests(d):
+    """Branch tokens with an open 'Request for <branch> branch' label on the PR."""
+    reqs = []
+    for lab in (d.get("labels") or []):
+        m = re.match(r"Request for (.+?) [Bb]ranch$", lab.get("name", ""))
+        if m:
+            reqs.append(m.group(1))
+    return reqs
+
+
+def branch_label(prefix, token):
+    """The repo's actual label name for '<prefix> for <token> branch' (case-insensitive)."""
+    want = re.compile(rf"^{prefix} for {re.escape(token)} branch$", re.I)
+    for name in repo_label_names():
+        if want.match(name):
+            return name
+    return None
+
+
 def we_approved(d):
     """True if our reviewer's latest review on the PR is APPROVED."""
     latest = None
@@ -897,8 +928,22 @@ def main():
                     help="compute an author's trust level (merge history + top-20 company)")
     ap.add_argument("--findings-list", action="store_true",
                     help="list PRs that currently belong in review-findings.md (awaiting our action)")
+    ap.add_argument("--branch-eval", type=int, metavar="PR",
+                    help="list a PR's backport branch requests + the Approved/Reject labels to apply (Rule 8)")
     args = ap.parse_args()
 
+    if args.branch_eval:
+        d = gh_json(["pr", "view", str(args.branch_eval), "--repo", REPO, "--json", "labels,baseRefName"]) or {}
+        reqs = branch_requests(d)
+        print(f"#{args.branch_eval} (base {d.get('baseRefName')}) — backport branch requests:")
+        if not reqs:
+            print("  (none)")
+        for tok in reqs:
+            appr = branch_label("Approved", tok) or f"Approved for {tok} branch (label missing!)"
+            rej = branch_label("Reject", tok) or f"Reject for {tok} branch (none)"
+            print(f"  {tok}: evaluate validity → if valid add label '{appr}'; if not, '{rej}'")
+        print("  apply with: gh pr edit <PR> --repo " + REPO + " --add-label '<label>'")
+        return
     if args.findings_list:
         ledger = load_ledger()
         detail = fetch_prs()
