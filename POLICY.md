@@ -199,6 +199,15 @@ elif CI == PENDING:                  -> no-op (a run is in flight; wait for next
   when it turns on domain expertise we lack or touches shared infra broadly,
   and **Reject** only when the change is wrong/harmful or duplicates/forecloses
   a better approach.
+  - **"Get another opinion" is never a silent bucket.** If we recommend it, we must
+    **post our review notes on the PR** (the specific concern + the exact question we
+    want a second opinion on) **and** either **recruit the relevant reviewer/SME**
+    (@-mention or add-reviewer) or **defer to an existing engaged reviewer** (name
+    them + summarize their open items). Never park a PR as "needs another opinion"
+    without the author/community seeing *why* and *who* we're asking. Record
+    `opinion_request`. (Same anti-silent-state principle as the hardware-evidence and
+    change requests — and if an existing reviewer already has open inline comments,
+    that's a change-request to address them, not a fresh opinion ask.)
   - **When the recommendation is to post a request** (Request changes, evidence
     request, or another-opinion ask), the brief MUST include a concrete
     **"Requested changes (to post)"** block — the specific, itemized asks written

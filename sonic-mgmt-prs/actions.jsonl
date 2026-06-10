@@ -100,3 +100,8 @@
 {"pr": 23606, "action": "merge", "date": "2026-06-10", "detail": "squash (REST) 8dfb328f1: Add tests for static route removal after config reload; #18882 left open (partial)", "ts": "2026-06-10T18:44:05Z"}
 {"pr": 24649, "action": "changes_requested", "date": "2026-06-10", "detail": "consolidate lolyu's open inline review (drop mocks/real dualtor testbed, toggle marks, port stats) + CodeQL uninit var", "ts": "2026-06-10T18:48:44Z"}
 {"pr": 24687, "action": "merge", "date": "2026-06-10", "detail": "squash (REST) cc9acc5a8; Approved for 202511; Co-authored-by:Copilot stripped, signed off as PR author", "ts": "2026-06-10T19:02:57Z"}
+{"pr": 19020, "action": "opinion_request", "date": "2026-06-10", "detail": "https://github.com/sonic-net/sonic-mgmt/pull/19020#issuecomment-4673559637", "ts": "2026-06-10T19:09:55Z"}
+{"pr": 24902, "action": "opinion_request", "date": "2026-06-10", "detail": "https://github.com/sonic-net/sonic-mgmt/pull/24902#issuecomment-4673559732", "ts": "2026-06-10T19:09:55Z"}
+{"pr": 25123, "action": "opinion_request", "date": "2026-06-10", "detail": "https://github.com/sonic-net/sonic-mgmt/pull/25123#issuecomment-4673559852", "ts": "2026-06-10T19:09:55Z"}
+{"pr": 21658, "action": "changes_requested", "date": "2026-06-10", "detail": "defer to r12f + snappi pass + docstring", "ts": "2026-06-10T19:09:55Z"}
+{"pr": 21660, "action": "changes_requested", "date": "2026-06-10", "detail": "defer to r12f + snappi pass + docstring", "ts": "2026-06-10T19:09:55Z"}

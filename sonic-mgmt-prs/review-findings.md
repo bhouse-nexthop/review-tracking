@@ -2,7 +2,8 @@
 
 **PRs awaiting our action**, sorted by recommendation — each links to its full brief (click → read → back → next). A PR drops off this doc once it's **approved/merged** or **handed back to the author** (changes/info/evidence requested, conflicting, COI-waiting); full state + history live in `actions.jsonl` + git. Recommendations fold in: does the diff match the description, complexity, **author trust** (§8.1), and **whether CI actually runs the test** (a green check on a skipped test proves nothing — see CI column). _Decision support; approval is the human reviewer's call._
 
-**Tally:** Get another opinion: 5 · Blocked (COI): 2  
+**Tally:** Blocked (COI): 2  
+_(All review-bucket PRs now have our notes posted + are awaiting author/reviewer — see actions.jsonl. Only the 2 COI-blocked NextHop PRs remain for us to act on, by recruiting a cross-company reviewer.)_
 _(#24687 merged. Off-doc awaiting author: #24649 (lolyu review), #20001 (staleness), + the earlier change/evidence requests. #18660 closed.)_
 _(#24649 → off-doc: unresolved maintainer review (lolyu: drop mocks/use toggle marks/add port stats) + CodeQL uninit-var — awaiting author. #23606 merged; #20001 staleness ask; #18660 closed.)_
 _(#23606 merged. #20001 → staleness ask; #18660 closed by author.)_
@@ -10,16 +11,6 @@ _(#20001 → asked author to confirm it's not stale (xfail for swss#3498); #1866
 _(Newly reviewed this sweep; #18660 was closed by its author — superseded by #22982.)_
 _(Everything else this cycle is off-doc: 7 merged, 13 change/evidence requests out — all formal blocking Request-changes reviews. See actions.jsonl.)_
 _(Off-doc — awaiting author: #24247, #24320, #24845 (changes requested), #24975 (changes requested). Merged this cycle: #23930, #24493, #24545, #24597, #24876, #25134.)_
-
-## Get another opinion (5)
-
-| PR | Title | Type/Trust | CI runs test? | Why |
-|----|-------|-----------|---------------|-----|
-| [#19020](#pr-19020) | [Test gap] Test plan to verify vxlan tunnel na… | Test plan/doc / Expert | N-A (test-plan doc) | test-plan doc under-delivers vs its own objectives |
-| [#21658](#pr-21658) | [AI - Snappi] BGP convergence testcase for sin… | New test (snappi) / Expert | No (snappi/nut) | snappi (not CI-run) + r12f review comments open |
-| [#21660](#pr-21660) | [AI - Snappi] BGP convergence testcase for Dev… | New test (snappi) / Expert | No (snappi/nut) | snappi (not CI-run) + r12f skeleton-dedup request open |
-| [#24902](#pr-24902) | Handle pytest.fail.Exeption in wait_until | Bug fix / High | Partial (lib runs; new branch not asserted) | one-line change to shared wait_until; repo-wide behavioral effect |
-| [#25123](#pr-25123) | [TH6] test_po_cleanup fix for large number of … | Bug fix / Expert | Partial (>64-LAG branch unreachable on vs) | intentional syslog-sampling sensitivity needs maintainer sign-off; Nokia-HW path |
 
 ## Blocked (COI) (2)
 
@@ -33,99 +24,6 @@ _(Off-doc — awaiting author: #24247, #24320, #24845 (changes requested), #2497
 ## Briefs
 
 _Ordered by recommendation, same as above._
-
-<a id="pr-19020"></a>
-
-### [PR #19020](https://github.com/sonic-net/sonic-mgmt/pull/19020) — [Test gap] Test plan to verify vxlan tunnel name length
-- **➡ Recommendation:** Get another opinion — test-plan doc under-delivers vs its own objectives
-- **Author / affiliation:** wsycqyz (ShiyanWangMS) / Microsoft *(low confidence — profile empty, no `-ms` suffix; inferred from display name)*
-- **Trust:** Expert (Microsoft)
-- **CI runs the test?:** N-A (test-plan doc)
-- **Type:** Test plan / design doc (no test code)
-- **Complexity:** Low — 1 file, +84/-0, `docs/testplan/Vxlan-tunnel-name-length-test-plan.md`.
-- **Description summary:** Plans verification that VXLAN tunnel interface names longer than the historical 15-char limit can be created/listed/deleted; backs sonic-buildimage #20108 (YANG name-length validation). Two cases: create a long-named tunnel via `config load`, delete via redis-cli, confirm via `show vxlan tunnel`.
-- **Existing reviews/comments:** yxieca (Microsoft) AI note "no issues found" but **DISMISSED** (not an approval); `/azp run` excluded (docs path).
-- **Matches description?:** Partial — PR body template is essentially empty; the doc delivers a thin but coherent plan.
-- **Conflict likelihood:** Low — brand-new file.
-- **Duplication likelihood:** none seen.
-- **Linked issue(s):** sonic-buildimage#20108 is a **PR** (cross-repo, closed) — track-only; `Fixes #` blank.
-- **Reviewer notes:** Under-delivers vs its own objectives — TC1 lists 16/32/63-char objectives but exercises only one ~30-char name (no boundary cases); TC2 deletes via raw `redis-cli del` (bypasses config tooling); markdown code-fence glitch; empty PR template. Defer to Microsoft on intent.
-
-[↑ back to recommendations](#deep-review-findings--sonic-netsonic-mgmt--2026-06-10)
-
-<a id="pr-21658"></a>
-
-### [PR #21658](https://github.com/sonic-net/sonic-mgmt/pull/21658) — [AI - Snappi] BGP convergence testcase for single session flap Down (Case 1)
-- **➡ Recommendation:** Get another opinion — snappi (not CI-run) + r12f review comments open
-- **Author / affiliation:** selldinesh (Dinesh Kumar Sellappan) / Keysight Technologies
-- **Trust:** Expert (Keysight)
-- **CI runs the test?:** No (snappi/nut)
-- **Type:** New test suite (Snappi dataplane BGP convergence test)
-- **Complexity:** Low–Medium — single new file `test_bgp_single_port_down.py`, +272/-0; shared logic in the merged `helper.py`.
-- **Description summary:** Measures BGP convergence (packet-loss duration) for a single-session flap over two `event_type`s (`t0_port_shutdown`, `route_withdrawal`) across frame sizes 64–8192 (IPv6); records a convergence-time gauge.
-- **Existing reviews/comments:** r12f (Microsoft) — 5 actionable inline comments (rename event types to HLD, lift common code, rename `subnet_type`→`ip_version`, add scale/prefix params, adjust frame sizes); author replied "fixed" to 4; r12f "Still waiting for updates." yxieca DISMISSED.
-- **Matches description?:** Yes — Case 1 single-session flap as described.
-- **Conflict likelihood:** Low — brand-new file.
-- **Duplication likelihood:** none — confirmed **sibling** of #21660 (clean series), not a dup.
-- **Linked issue(s):** none — `Fixes #` blank; dependency #21565 already merged.
-- **Reviewer notes:** r12f's dedup-refactor of the two event branches is still largely unmet (substantial duplicated setup/teardown); test only parametrizes IPv6 (IPv4 ranges are dead config); hardcoded `/home/admin/ai_acl.json` + `chmod 666`. Defer to Keysight on the TG harness.
-
-[↑ back to recommendations](#deep-review-findings--sonic-netsonic-mgmt--2026-06-10)
-
-<a id="pr-21660"></a>
-
-### [PR #21660](https://github.com/sonic-net/sonic-mgmt/pull/21660) — [AI - Snappi] BGP convergence testcase for Device Unisolation (Case 3)
-- **➡ Recommendation:** Get another opinion — snappi (not CI-run) + r12f skeleton-dedup request open
-- **Author / affiliation:** selldinesh (Dinesh Kumar Sellappan) / Keysight Technologies
-- **Trust:** Expert (Keysight)
-- **CI runs the test?:** No (snappi/nut)
-- **Type:** New test suite (Snappi dataplane BGP-convergence case)
-- **Complexity:** Low–Medium — single new file `test_bgp_device_unisolation.py`, +221/-0; relies on the already-merged shared `helper.py` (#21204).
-- **Description summary:** Snappi BGP dataplane-convergence test over three "device unisolation" recovery events (`config_reload`, `all_ports_startup`, `bgp_container_restart`), parametrized by IP version / frame rate / frame size; reports convergence time as a Gauge metric.
-- **Existing reviews/comments:** r12f (Microsoft) — multiple inline comments (no approve): reuse one skeleton across cases 1/2/3, drop an unneeded param, select the t1 device from topo/tbinfo not a hostname substring; author marked some fixed, deferred skeleton reuse. advanced-security flagged unused imports. yxieca DISMISSED ×2.
-- **Matches description?:** Yes — implements the three events. Minor: docstring/body is stale copy-paste from Case 1 ("fec errors").
-- **Conflict likelihood:** Low — single new file.
-- **Duplication likelihood:** none — confirmed **sibling** of #21658 (different file, shared helper), not a dup; r12f's skeleton-dedup request is the legit overlap, deferred.
-- **Linked issue(s):** none — `Fixes #` blank; #21204 (dep, merged) and #21658 (sibling) are PRs.
-- **Reviewer notes:** Fix stale docstring; verify the `configure_acl_for_route_withdrawl` unused import was actually removed; t1 selection still uses `'t1' in hostname` substring (fragile). Defer to Keysight on harness style; skeleton dedup is the only real maintainability lever.
-
-[↑ back to recommendations](#deep-review-findings--sonic-netsonic-mgmt--2026-06-10)
-
-<a id="pr-24902"></a>
-
-### [PR #24902](https://github.com/sonic-net/sonic-mgmt/pull/24902) — Handle pytest.fail.Exeption in wait_until
-- **➡ Recommendation:** Get another opinion — one-line change to shared wait_until; repo-wide behavioral effect
-- **Author / affiliation:** wrideout-arista / Arista
-- **Trust:** High (Arista)
-- **CI runs the test?:** Partial (lib runs; new branch not asserted)
-- **Type:** Bug fix
-- **Complexity:** Low — one-line change (+1/-1) in shared `tests/common/utilities.py`; narrow change but broad blast radius (`wait_until` is used everywhere).
-- **Description summary:** `wait_until` catches `Exception`, but `pytest.fail()` raises `pytest.fail.Exception` (a `BaseException` subclass) which escapes the handler → immediate failure instead of retry. Adds `pytest.fail.Exception` to the `except` tuple. Fixes #24726.
-- **Existing reviews/comments:** No formal reviews; author pinged wangxin/lolyu/yutongzhang-microsoft.
-- **Matches description?:** Yes — exactly the widened `except`; rationale technically accurate (`pytest` already imported).
-- **Conflict likelihood:** Low — file-isolated.
-- **Duplication likelihood:** none seen.
-- **Reviewer notes:** Behavioral nuance: a `pytest_assert`/`pytest.fail` inside a condition is now swallowed and retried to timeout — intended, but any call site relying on fast-fail changes behavior. Title typo ("Exeption").
-
-[↑ back to recommendations](#deep-review-findings--sonic-netsonic-mgmt--2026-06-10)
-
-<a id="pr-25123"></a>
-
-### [PR #25123](https://github.com/sonic-net/sonic-mgmt/pull/25123) — [TH6] test_po_cleanup fix for large number of lags(100s)
-- **➡ Recommendation:** Get another opinion — intentional syslog-sampling sensitivity needs maintainer sign-off; Nokia-HW path
-- **Author / affiliation:** sanjair-git / Nokia
-- **Trust:** Expert (Nokia)
-- **CI runs the test?:** Partial (>64-LAG branch unreachable on vs)
-- **Type:** Bug fix (labeled "Test case improvement")
-- **Complexity:** Medium — single file, +79/-5; adds branching LAG-count logic, syslog sampling heuristics, and a custom BGP-wait path; confined to one test.
-- **Description summary:** On TH6/large topologies with 100+ port channels, `test_po_cleanup_after_reload` fails falsely because (1) LogAnalyzer needs a per-LAG SIGTERM line for every LAG and rsyslog drops lines under CPU stress, and (2) the built-in BGP wait is unrealistic while CPUs are pegged. Keeps strict per-LAG matching at ≤64 LAGs; for >64, uses a broad SIGTERM regex + a stratified mandatory sample, then drops stress load before asserting BGP convergence.
-- **Existing reviews/comments:** None.
-- **Matches description?:** Yes — `LAG_LOG_STRICT_PER_PC_MAX=64` threshold, `stratified_lag_samples_for_syslog`, broad SIGTERM pattern, `wait_for_bgp=False` + `killall yes` + explicit wait.
-- **Conflict likelihood:** Low — file-isolated.
-- **Duplication likelihood:** none seen.
-- **Reviewer notes:** (1) Author acknowledges a single broken LAG can slip through if not in the sample and its syslog line is dropped — an intentional sensitivity trade-off a maintainer should sign off (the test's purpose is catching missing-SIGTERM regressions). (2) `bgp_wait_seconds_after_config_reload` hardcodes platform `x86_64-nokia_ixr7220_h6_128-r0` and duplicates `config_reload`'s timeout math (will silently drift). No linked issue; `64` is a magic number with no >64-path test evidence shown.
-
-[↑ back to recommendations](#deep-review-findings--sonic-netsonic-mgmt--2026-06-10)
 
 <a id="pr-23346"></a>
 
