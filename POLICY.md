@@ -50,7 +50,7 @@ Every action is appended to `<repo>/actions.jsonl`, one JSON object per line:
 ```
 
 Action types: `conflict_ping`, `azp_run`, `ci_fail_notify`, `deep_review`,
-`escalate`.
+`escalate`, `issue_close`.
 
 **Golden rule — check the ledger before acting.** No rule fires for a PR if an
 equivalent action already exists for the current episode. This is what stops
@@ -70,6 +70,8 @@ repeated pings and repeated `/azp run`. Concretely:
 - **`deep_review`** — only if the PR has had no `deep_review`, **or** the PR
   head SHA changed since the last review (substantive new commits warrant a
   re-review). Trivial rebases don't.
+- **`issue_close`** — only after the PR is merged, only for issues that won't
+  auto-close (see Rule 6), and only once per (PR, issue) pair.
 
 ---
 
@@ -139,10 +141,27 @@ elif CI == PENDING:                  -> no-op (a run is in flight; wait for next
   New test suite / mix; (5) complexity — Low/Med/High; (6) matches description?
   — Yes/Partial/No + note; (7) conflict likelihood vs other open PRs (name
   overlaps); (8) duplication likelihood (name suspected dup or "none seen");
-  plus a one-line reviewer flag.
+  (9) **linked issue(s)** and their close-on-merge disposition (see Rule 6);
+  (10) a one-line reviewer flag; and (11) an **overall recommendation** —
+  one of **Approve** / **Request changes** / **Get another opinion** /
+  **Reject** — with a short rationale. The recommendation is a *suggestion* for
+  the human reviewer (who still makes the call); use **Get another opinion**
+  when it turns on domain expertise we lack or touches shared infra broadly,
+  and **Reject** only when the change is wrong/harmful or duplicates/forecloses
+  a better approach.
 - **Conflict/duplication seeding:** compute changed-file overlap across the
   eligible set deterministically; use that to seed fields 7–8, then reason over
   the diffs.
+- **Affiliation-aware reviewing:** defer to the author's company on facts about
+  that company's **own** hardware/platform/products. Do not raise questions an
+  author from that vendor is authoritative on — e.g. don't ask a Juniper
+  engineer registering a Juniper hwsku to "confirm the chip generation," or a
+  Nokia engineer about Nokia platform specifics. **Still** review framework /
+  cross-cutting / shared-infra / correctness concerns regardless of author
+  (e.g. a change to `tests/common/*`, a fixture used by everyone, or logic that
+  affects other vendors' platforms is fair game no matter who wrote it). The
+  test: is the flagged item a fact internal to the author's own product (defer)
+  or a shared-infra / cross-vendor / code-correctness concern (review)?
 
 ### Rule 5 — Post-`/azp run` follow-up (failure path) → notify the author
 - **Trigger:** a PR we previously `/azp run` (Rule 2 or 3) comes back **FAIL**
@@ -165,6 +184,32 @@ elif CI == PENDING:                  -> no-op (a run is in flight; wait for next
   non-spurious / persistent failure.
 
 ---
+
+### Rule 6 — Issue linkage & manual close on merge
+We track every issue a PR references so that, **if/when we approve and merge the
+PR, any linked issue that GitHub will not auto-close gets closed manually.**
+
+- **Detection (every sweep):** parse the PR body (and title) for issue
+  references — `#N`, `owner/repo#N`, and full `…/issues/N` URLs — and note
+  whether each is preceded by a **closing keyword**
+  (`close[sd]?`, `fix(es|ed)?`, `resolve[sd]?`).
+- **Resolve each reference's type/state via the API** — a bare `#N` is often a
+  reference to *another PR* or a "based-on" note, **not** an issue this PR
+  fixes. Only `type == issue` references are close candidates; ignore PR refs.
+- **Classify each linked issue:**
+  | Case | GitHub auto-closes on merge? | Our action on merge |
+  |------|------------------------------|---------------------|
+  | Same-repo issue **+ closing keyword**, merged to default branch | **Yes** | none (verify it closed) |
+  | Same-repo issue, **no closing keyword** | No | **manual close** |
+  | **Cross-repo** issue (keyword or not) | **No** (GitHub never auto-closes across repos) | **manual close** |
+  | Reference is a PR, or a vague "related to" | n/a | none (track only) |
+- **On merge:** for each close candidate, `gh issue close <ref> -c "Resolved by
+  <repo>#<pr> (merged)."` and record an `issue_close` ledger entry. Never close
+  an issue before the PR is actually merged; never close one GitHub already
+  auto-closed.
+- **Caveat:** auto-close only fires when the PR merges to the **default branch**.
+  A PR merged to a release branch (e.g. `202xxx`) will **not** auto-close even a
+  same-repo keyword issue → treat as manual close.
 
 ## 6. State transitions (lifecycle of one PR)
 
@@ -225,4 +270,6 @@ no effect, the commenter may lack trigger rights.
 ## 11. Change log
 - **2026-06-10** — initial policy. Rules 1–4 established during the first
   sonic-mgmt sweep; Rule 5 (post-`/azp run` follow-up) and the action-ledger
-  idempotency model added the same day.
+  idempotency model added the same day. Rule 6 (issue linkage & manual
+  close-on-merge, incl. cross-repo / missing-keyword detection) added the same
+  day.

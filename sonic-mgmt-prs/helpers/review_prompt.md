@@ -30,7 +30,16 @@ Output ONLY this brief:
 - **Conflict likelihood:** Low | Med | High — <name overlapping eligible PRs, or "file-isolated">
 - **Duplication likelihood:** <suspected dup PR# or "none seen"> — <reason>
 - **Reviewer notes:** <1-2 sentences flagging anything for human attention, or "clean">
+- **Linked issue(s):** <repo#num (issue/PR, state) — auto-close | MANUAL close on merge | track-only; or "none">
+- **Suggested recommendation:** Approve | Request changes | Get another opinion | Reject — <short rationale>
 ```
+
+Reviewing rules (see POLICY.md §5 Rule 4):
+- **Affiliation-aware:** defer to the author's company on facts about their own
+  hardware/platform; still review shared-infra / cross-vendor / correctness.
+- **Recommendation** is a suggestion for the human, who makes the call. Use
+  "Get another opinion" for domain expertise we lack or broad shared-infra
+  changes; "Reject" only for wrong/harmful/duplicative changes.
 
 Do NOT approve, comment, or post anything to GitHub. Return only the brief.
 After the review, record it: `helpers/sweep.py --record-review <N> --review-detail review-findings-<date>.md`.
