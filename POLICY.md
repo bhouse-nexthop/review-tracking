@@ -179,6 +179,14 @@ elif CI == PENDING:                  -> no-op (a run is in flight; wait for next
   when it turns on domain expertise we lack or touches shared infra broadly,
   and **Reject** only when the change is wrong/harmful or duplicates/forecloses
   a better approach.
+  - **When the recommendation is to post a request** (Request changes, evidence
+    request, or another-opinion ask), the brief MUST include a concrete
+    **"Requested changes (to post)"** block — the specific, itemized asks written
+    as what we will actually comment, not a terse one-line summary. The
+    review-findings entry should read like the comment we're about to send (file/
+    function/line specifics, the exact fixes), so there's no gap between the doc
+    and what the author receives. The index "Why" stays terse; the brief carries
+    the full request.
 - **Conflict/duplication seeding:** compute changed-file overlap across the
   eligible set deterministically; use that to seed fields 7–8, then reason over
   the diffs.

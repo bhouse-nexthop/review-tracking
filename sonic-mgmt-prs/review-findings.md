@@ -67,7 +67,11 @@ _Ordered by recommendation, same as above._
 - **Duplication likelihood:** none seen.
 - **Linked issue(s):** none — `Fixes #` placeholder blank.
 - **Reviewer notes:** Two real, still-open items in head: (1) module-level `global test_results` DataFrame mutated across parametrized runs → xdist/parallel contamination risk; (2) possible double traffic start (`start_stop(start,…)` then `boundary_check` calls `StartStatelessTrafficBlocking()` with no intervening stop). Uses private RestPy (`snappi_api._ixnetwork`) — Ixia-only by design (defer to Keysight), but breaks the vendor-neutral SNAPPI abstraction.
-- **Suggested recommendation:** Request changes — core logic sound and AI feedback mostly addressed, but fix the `global` xdist hazard and the double-start before merge; still needs a human approval.
+- **Requested changes (to post):**
+  1. **`global test_results` DataFrame** — it's module-level and mutated across parametrized runs, so under xdist/`-n` (or repeated params) results contaminate each other. Scope it to a fixture / per-test return instead of a module global.
+  2. **Double traffic start** — `start_stop(start, traffic)` runs, then the first `boundary_check` calls `StartStatelessTrafficBlocking()` with no intervening stop. Stop before re-starting (or start traffic once).
+  3. **Description nit** — the Summary says "maximum traffic rate" but the test finds the *minimum frame size*; please correct it.
+  - Also: the PR-gate doesn't run this (snappi/`nut`), so please attach a passing snappi/Ixia run before merge. We defer to Keysight on the Ixia-private RestPy usage.
 
 [↑ back to recommendations](#deep-review-findings--sonic-netsonic-mgmt--2026-06-10)
 
@@ -86,7 +90,11 @@ _Ordered by recommendation, same as above._
 - **Conflict likelihood:** Low — file-isolated.
 - **Duplication likelihood:** none seen.
 - **Reviewer notes:** abdosi flagged the master approach is still evolving → may be partially superseded; confirm direction. Wholesale PORT replace + split-patch ordering are the riskiest changes; requested test results not yet posted.
-- **Suggested recommendation:** Request changes / get another opinion — Partial match + undisclosed scope creep; abdosi indicates the approach may be superseded — split it and confirm direction
+- **Requested changes (to post):**
+  1. **Scope vs. description** — the diff goes well beyond "add parametrization": it also changes ACL enumeration (config_facts-driven), removes the `/localhost/` patch ops, does a wholesale PORT-object replace, adds BUFFER_QUEUE cleanup, and a new split-patch `No.1b` remove flow. Please either narrow the PR to the described change or update the description to cover everything — and split the unrelated fixes into their own PR(s) if practical.
+  2. **Confirm direction** — abdosi notes the master approach is moving away from remove-op patch cleanup and that 202405 needs a separate testcase; please confirm this isn't superseded before we invest further review.
+  3. **Test results** — post the run results yejianquan asked for and address the inline comments.
+  - Also: the PR-gate doesn't run this (`topology t2/lrh/urh`), so a t2 hardware pass is needed to validate the rewrite.
 
 [↑ back to recommendations](#deep-review-findings--sonic-netsonic-mgmt--2026-06-10)
 
@@ -105,7 +113,12 @@ _Ordered by recommendation, same as above._
 - **Conflict likelihood:** Low — additive overlap with #24545 only (different region of the yaml).
 - **Duplication likelihood:** none seen.
 - **Reviewer notes:** Needs a human pass: fix the live CodeQL regex warnings, confirm the `acl.json` action/value mismatch, verify unused-import findings actually resolved. Heavy `time.sleep` + full `config_reload` per case → slow/flaky-prone.
-- **Suggested recommendation:** Request changes — new suite with live CodeQL regex warnings and an acl.json action/value mismatch to resolve first
+- **Requested changes (to post):**
+  1. **CodeQL — unmatchable regex** — the anchored patterns in `verify_bgp_ecmp` / `has_ecmp_routes` have internal `^`/`$`, so they can never match; please fix them.
+  2. **Unused imports** — the diff looks out of sync with the CodeQL scan; confirm the flagged unused imports are actually removed.
+  3. **`acl.json` action/value mismatch** — it defines action `DISABLE_ARS_FORWARDING` but the rule sets it to `"DROP"`; please reconcile.
+  4. **Dead sleeps** — heavy `time.sleep` + a full `config_reload` per case is slow and flake-prone; gate on readiness (`wait_until`) where a signal exists rather than fixed sleeps.
+  - Also: the PR-gate doesn't run this (gated to marvell-teralynx), so a marvell-teralynx hardware pass is needed.
 
 [↑ back to recommendations](#deep-review-findings--sonic-netsonic-mgmt--2026-06-10)
 
