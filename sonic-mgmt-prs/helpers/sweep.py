@@ -879,7 +879,15 @@ def latest_action(pr, ledger):
 
 
 def responded_since(d, ts):
-    """Any PR activity (commit/comment/review/label) after ts — proxy via updatedAt."""
+    """Did the author/reviewer act after our hand-off? Proxy via updatedAt > ts.
+    Guard: if our action was *today* (ts is today's date), don't judge a response yet
+    — our own actions (comments, /azp run) bump updatedAt the same day, which would
+    look like a response. Real responses surface on a later sweep day. (Seeded ledger
+    entries are date-only, which made this a false-positive flood.)"""
+    if not ts:
+        return False
+    if ts[:10] >= today():
+        return False
     upd = d.get("updatedAt", "") or ""
     return bool(upd) and upd > ts
 
