@@ -622,14 +622,27 @@ def merge_pr(pr, apply):
     if not apply:
         print("  (dry-run — pass --apply to merge)")
         return
-    if rebase:
-        cmd = ["gh", "pr", "merge", str(pr), "--repo", REPO, "--rebase"]
-    else:
-        cmd = ["gh", "pr", "merge", str(pr), "--repo", REPO, "--squash",
-               "--subject", subject, "--body", body]
-    out = subprocess.run(cmd, capture_output=True, text=True)
-    if out.returncode != 0:
+    # Use the REST merge endpoint (PUT .../merge), not `gh pr merge` (GraphQL):
+    # GraphQL mutations are the first to get throttled/401'd under load, while REST
+    # stays available. Retry a few times for transient auth blips.
+    payload = {"merge_method": "rebase" if rebase else "squash"}
+    if not rebase:
+        payload["commit_title"] = subject
+        payload["commit_message"] = body
+    merged = False
+    for _ in range(6):
+        out = subprocess.run(["gh", "api", "--method", "PUT",
+                              f"repos/{REPO}/pulls/{pr}/merge", "--input", "-"],
+                             input=json.dumps(payload), capture_output=True, text=True)
+        if out.returncode == 0:
+            merged = True
+            break
+        if "401" in out.stderr or "Requires authentication" in out.stderr:
+            continue                                    # transient — retry
         sys.stderr.write(out.stderr); raise SystemExit("merge failed")
+    if not merged:
+        print(f"  could not merge #{pr} (transient auth); will retry next sweep (pending-merge guard)")
+        return
     append_ledger({"pr": pr, "action": "merge", "date": today(), "detail": f"{method}: {subject}"})
     print(f"  MERGED (#{pr}, {method}).")
     # close-on-merge for linked issues (Rule 6)

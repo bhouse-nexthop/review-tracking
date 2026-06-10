@@ -2,14 +2,8 @@
 
 **PRs awaiting our action**, sorted by recommendation — each links to its full brief (click → read → back → next). A PR drops off this doc once it's **approved/merged** or **handed back to the author** (changes/info/evidence requested, conflicting, COI-waiting); full state + history live in `actions.jsonl` + git. Recommendations fold in: does the diff match the description, complexity, **author trust** (§8.1), and **whether CI actually runs the test** (a green check on a skipped test proves nothing — see CI column). _Decision support; approval is the human reviewer's call._
 
-**Tally:** Approve: 1 · Needs hardware-pass evidence: 9 · Get another opinion: 5 · Blocked (COI): 2  
+**Tally:** Needs hardware-pass evidence: 9 · Get another opinion: 5 · Blocked (COI): 2  
 _(Off-doc — awaiting author: #24247, #24320, #24845 (changes requested), #24975 (changes requested). Merged this cycle: #23930, #24493, #24545, #24597, #24876, #25134.)_
-
-## Approve (1)
-
-| PR | Title | Type/Trust | CI runs test? | Why |
-|----|-------|-----------|---------------|-----|
-| [#18701](#pr-18701) | Fix missing PSU fans in test_psu_fan.py port to 202411 | Backport (bugfix) / Low | No (api not in gate) | **verified backport** of merged #17641 (same files; deps exist on 202411) → no HW pass needed |
 
 ## Needs hardware-pass evidence (9)
 
@@ -47,26 +41,6 @@ _(Off-doc — awaiting author: #24247, #24320, #24845 (changes requested), #2497
 ## Briefs
 
 _Ordered by recommendation, same as above._
-
-<a id="pr-18701"></a>
-
-### [PR #18701](https://github.com/sonic-net/sonic-mgmt/pull/18701) — Fix missing PSU fans in test_psu_fan.py port to 202411
-- **➡ Recommendation:** Approve — **verified backport** of already-merged #17641 (verified-backport exception → no hardware pass needed)
-- **Author / affiliation:** eyakubch / **unknown** (empty profile company, no org suffix)
-- **Trust:** Low (unknown)
-- **CI runs the test?:** No (api not in gate)
-- **Type:** Backport (bug fix) — clean 202411 backport of merged master PR #17641
-- **Complexity:** Low — 3 files, +48/-17, all under `tests/platform_tests/api/`.
-- **Description summary:** Fixes `test_psu_fans.py` failures on devices with absent/skipped PSUs by extracting `skip_absent_psu` to a module-level `conftest.py` function and wiring it into `TestPsuFans` (mirroring `test_psu.py`); populates `self.psu_skip_list` in setup.
-- **Existing reviews/comments:** yxieca (Microsoft) AI note "no issues found" but **DISMISSED**; BuildBot added 202311/202405/202505 backport labels.
-- **Matches description?:** Yes — exactly the helper extraction + skip-guard insertion, consistent with `test_psu.py`.
-- **Conflict likelihood:** Low — targets release branch `202411`, isolated to PSU API tests; sibling backports go to other branches.
-- **Duplication likelihood:** none — legitimate backport of #17641, not a dup.
-- **Linked issue(s):** none closeable — references master PR #17641 (a PR); `Fixes #` blank.
-- **Backport verification:** ✓ source #17641 is MERGED (base master, same title); ✓ same 3 files (conftest.py, test_psu.py, test_psu_fans.py); ✓ no newer-only dependency — `get_skip_mod_list`/`skip_absent_psu`/`psu_skip_list` already exist on the 202411 branch. Qualifies for the verified-backport exception → no hardware pass required.
-- **Reviewer notes:** Faithful to master; only a minor PEP8 nit (blank lines before the new module-level function). PSU hardware isn't author-specific.
-
-[↑ back to recommendations](#deep-review-findings--sonic-netsonic-mgmt--2026-06-10)
 
 <a id="pr-24437"></a>
 

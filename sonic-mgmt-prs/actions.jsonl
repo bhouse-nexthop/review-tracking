@@ -78,3 +78,4 @@
 {"pr": 24247, "action": "changes_requested", "date": "2026-06-10", "detail": "https://github.com/sonic-net/sonic-mgmt/pull/24247#issuecomment-4671951099", "ts": "2026-06-10T15:49:16Z"}
 {"pr": 24320, "action": "changes_requested", "date": "2026-06-10", "detail": "https://github.com/sonic-net/sonic-mgmt/pull/24320#issuecomment-4671952102", "ts": "2026-06-10T15:49:16Z"}
 {"pr": 24845, "action": "changes_requested", "date": "2026-06-10", "detail": "https://github.com/sonic-net/sonic-mgmt/pull/24845#issuecomment-4671952282", "ts": "2026-06-10T15:49:16Z"}
+{"pr": 18701, "action": "merge", "date": "2026-06-10", "detail": "squash (REST): Fix missing PSU fans in test_psu_fan.py port to 202411; backports Approved 202311/202405/202505", "ts": "2026-06-10T16:10:17Z"}
