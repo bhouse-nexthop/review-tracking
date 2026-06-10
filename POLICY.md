@@ -50,7 +50,7 @@ Every action is appended to `<repo>/actions.jsonl`, one JSON object per line:
 ```
 
 Action types: `conflict_ping`, `azp_run`, `ci_fail_notify`, `deep_review`,
-`escalate`, `issue_close`.
+`escalate`, `issue_close`, `title_desc_edit`.
 
 **Golden rule — check the ledger before acting.** No rule fires for a PR if an
 equivalent action already exists for the current episode. This is what stops
@@ -72,6 +72,9 @@ repeated pings and repeated `/azp run`. Concretely:
   re-review). Trivial rebases don't.
 - **`issue_close`** — only after the PR is merged, only for issues that won't
   auto-close (see Rule 6), and only once per (PR, issue) pair.
+- **`title_desc_edit`** — only once per PR unless the author later regresses it
+  (a new edit may be warranted if they overwrite our cleanup with another
+  inadequate version).
 
 ---
 
@@ -85,6 +88,9 @@ repeated pings and repeated `/azp run`. Concretely:
 3. **Load the ledger** (`actions.jsonl`).
 4. **Classify** each PR and apply the first matching rule below, **gated by the
    ledger** (§3). Append any action taken to the ledger.
+4b. **Title/description hygiene (Rule 7):** independently of the rule above,
+   check **every** PR's title/description and edit the woefully-inadequate ones.
+   This is not gated on CI/merge state.
 5. **Regenerate** the tracking table and findings (`gen_table.py`).
 6. **Report** to the human: new actions taken, escalations, and the current
    eligible-for-review set.
@@ -211,6 +217,44 @@ PR, any linked issue that GitHub will not auto-close gets closed manually.**
   A PR merged to a release branch (e.g. `202xxx`) will **not** auto-close even a
   same-repo keyword issue → treat as manual close.
 
+### Rule 7 — PR hygiene: fix woefully-inadequate titles/descriptions
+Maintainers (`maintain`/`push` on the repo) **edit** a PR's title and/or
+description when it is *woefully inadequate*, so the history is searchable and
+future readers can understand what changed.
+
+- **Scope:** applies to **all** assigned PRs regardless of CI/merge state — a
+  conflicting or failing PR can still have a useless title. (This is *not*
+  gated on Rule 4 eligibility.) Run the title/description check across the whole
+  queue each sweep.
+- **Trigger (be conservative — don't edit for the sake of editing):** only when
+  clearly inadequate, e.g. a non-descriptive title (`Update variables`, `fix`,
+  `changes`, a bare filename), an **empty/placeholder PR template** (no summary
+  beyond `Fixes # (issue)`, all Approach sections blank), or a description that
+  plainly doesn't reflect what the diff does. If the title/description is merely
+  terse-but-clear, **leave it**.
+- **How to edit:**
+  - Keep it **as short as possible** while accurately reflecting what the PR
+    does — someone may reference it later. No padding.
+  - **Follow the repo PR template** (Description/Summary, Type of change, Back
+    port, Approach). Preserve the author's correct selections (e.g. an already-
+    checked "Type of change"); fill only what's missing.
+  - **Never fabricate** verification/test claims on the author's behalf — if how
+    they tested is unknown, say so factually (e.g. "config-only change", "test
+    plan only — no code"). Base the summary on the actual diff.
+  - Leave an HTML-comment audit note in the body recording that a maintainer
+    edited it and the original title.
+- **Permission fallback:** editing title/body needs `maintain`/`push`. If we
+  only have `triage`, do **not** edit — instead post a comment *suggesting* a
+  better title/description and asking the author to apply it.
+- **Author notice (required with every edit):** post one comment telling the
+  author we updated the title/description, **with specifics** — which template
+  sections were empty, or that the title was non-descriptive — and ask them to
+  do better next time. **Tone: firm but professional**, never hostile or
+  demeaning; these are public, attributed to us, and aimed at fellow OSS
+  contributors. Community standing matters more than venting.
+- **Idempotency:** record `title_desc_edit` (§3); don't re-edit unless the
+  author regresses it.
+
 ## 6. State transitions (lifecycle of one PR)
 
 ```
@@ -272,4 +316,6 @@ no effect, the commenter may lack trigger rights.
   sonic-mgmt sweep; Rule 5 (post-`/azp run` follow-up) and the action-ledger
   idempotency model added the same day. Rule 6 (issue linkage & manual
   close-on-merge, incl. cross-repo / missing-keyword detection) added the same
-  day.
+  day. Rule 7 (fix woefully-inadequate PR titles/descriptions + firm-professional
+  author notice; applies to the whole queue, not just review-ready PRs) added the
+  same day.

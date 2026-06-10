@@ -68,3 +68,7 @@
 {"pr": 21658, "action": "deep_review", "date": "2026-06-10", "detail": "review-findings-2026-06-10.md (follow-up batch)", "ts": "2026-06-10T12:50:38Z"}
 {"pr": 19020, "action": "deep_review", "date": "2026-06-10", "detail": "review-findings-2026-06-10.md (follow-up batch)", "ts": "2026-06-10T12:50:38Z"}
 {"pr": 18701, "action": "deep_review", "date": "2026-06-10", "detail": "review-findings-2026-06-10.md (follow-up batch)", "ts": "2026-06-10T12:50:38Z"}
+{"pr": 23930, "action": "title_desc_edit", "date": "2026-06-10", "detail": "title+body; notice https://github.com/sonic-net/sonic-mgmt/pull/23930#issuecomment-4670447239", "ts": "2026-06-10T12:58:33Z"}
+{"pr": 19020, "action": "title_desc_edit", "date": "2026-06-10", "detail": "body; notice https://github.com/sonic-net/sonic-mgmt/pull/19020#issuecomment-4670447662", "ts": "2026-06-10T12:58:33Z"}
+{"pr": 24320, "action": "title_desc_edit", "date": "2026-06-10", "detail": "title only; notice https://github.com/sonic-net/sonic-mgmt/pull/24320#issuecomment-4670474577", "ts": "2026-06-10T13:01:37Z"}
+{"pr": 24845, "action": "title_desc_edit", "date": "2026-06-10", "detail": "title only; notice https://github.com/sonic-net/sonic-mgmt/pull/24845#issuecomment-4670475006", "ts": "2026-06-10T13:01:37Z"}
