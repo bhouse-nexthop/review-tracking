@@ -158,6 +158,14 @@ elif CI == PENDING:                  -> no-op (a run is in flight; wait for next
   — Yes/Partial/No + note; (7) conflict likelihood vs other open PRs (name
   overlaps); (8) duplication likelihood (name suspected dup or "none seen");
   (9) **linked issue(s)** and their close-on-merge disposition (see Rule 6);
+  (9b) **CI actually exercises the test?** — does the VS/KVM PR-gate CI really
+  *run* the added/changed test, or is it **skipped** (hardware-only, `is_vs_device`
+  early-skip, platform/ASIC gating, a topology marker the CI doesn't cover such as
+  `t2`/dualtor, a `conditional_mark` skip, `skipif`, or manual/allure-only)? Report
+  **Yes / No / Partial / N-A (not a test)**. **If No/Partial, that is a red flag:**
+  the green check did *not* validate the test logic, so the PR needs deeper manual
+  review (read the test as if untested) and the recommendation should lean to
+  **Get another opinion** (or request a hardware run / proof of a real pass).
   (10) a one-line reviewer flag; and (11) an **overall recommendation** —
   one of **Approve** / **Request changes** / **Get another opinion** /
   **Reject** — with a short rationale. The recommendation is a *suggestion* for
@@ -168,6 +176,23 @@ elif CI == PENDING:                  -> no-op (a run is in flight; wait for next
 - **Conflict/duplication seeding:** compute changed-file overlap across the
   eligible set deterministically; use that to seed fields 7–8, then reason over
   the diffs.
+- **Not CI-testable → require hardware-pass evidence, UNLESS it's vendor-scoped
+  to the author's own hardware.** When CI does not exercise the change (field 9b
+  = No/Partial), the default is to **ask the author for evidence of a passing run
+  on real hardware** before we approve/merge — we don't merge an unvalidated test
+  on a green check alone.
+  - **Vendor-own-hardware exception (no evidence required):** trust a change when
+    it is **confined entirely to the author's own vendor hardware** — i.e. **(a)**
+    the blast radius touches only that vendor's gear (no shared infra, no other
+    vendor's behavior), **(b)** the author is from that vendor (or the vendor
+    explicitly requested it), and **(c)** review surfaces no red flags. This
+    covers both *adding the vendor's hardware to an existing test's allow-list*
+    (e.g. Juniper → TH5 so an existing test runs) **and** *a new/modified test
+    scoped only to that vendor's hardware*. We should trust vendors modifying
+    things that only affect their own equipment, absent review red flags.
+  - **Does NOT qualify:** changes to shared test infra, common libraries, or
+    behavior that affects other vendors' platforms — even from a vendor — still
+    need a real hardware pass (or another validation path) before merge.
 - **Affiliation-aware reviewing:** defer to the author's company on facts about
   that company's **own** hardware/platform/products. Do not raise questions an
   author from that vendor is authoritative on — e.g. don't ask a Juniper
@@ -325,6 +350,21 @@ approval — see preconditions), applying these rules.
 - **Rebase case:** each preserved commit keeps its own message + signoff; we
   don't rewrite individual commit messages (if one is inadequate, that's a
   Rule 9 comment, not a block).
+- **Approval summary comment (required whenever we approve).** When we approve a
+  PR, post a short comment recording **how we reached that conclusion**, so the
+  rationale is on the public record and others can see what our approval did (and
+  didn't) rest on. Include:
+  1. **PR type** — bug fix / feature / new test / test improvement / backport / doc.
+  2. **Did CI actually run the test and pass?** — the crucial item. If **yes**,
+     say so and name the job/topology (e.g. "exercised on the t1-lag-vpp PR-gate
+     job"). If CI does **not** exercise the test (Rule 4 field 9b — hardware-only,
+     skipped topology, etc.), **say that explicitly** and state how we gained
+     confidence instead (depth of code review, the author's hardware run, etc.).
+  3. A one-line rationale (e.g. "simple None-guard bug fix", "adds isolated new
+     test coverage") and any caveats.
+  Keep it brief. This is what makes an approval auditable and stops a misleading
+  green check from being mistaken for validation. (The summary lives on the PR;
+  GitHub records the approval — no ledger entry needed.)
 - **On merge:** run the close-on-merge step (Rule 6) for linked issues and
   record a `merge` ledger entry (detail = method + resulting commit/PR).
 - **Tooling:** `sweep.py --merge <PR>` is dry-run by default (prints method +
@@ -424,4 +464,10 @@ no effect, the commenter may lack trigger rights.
   PRs, prefer author commit message, author Signed-off-by, never Co-authored-by,
   agent merges after human approval) and Rule 9 (commit-message hygiene) added the
   same day, plus the misleading-vs-inadequate distinction (misleading title /
-  description / commit message → flag & block, never silently rewrite).
+  description / commit message → flag & block, never silently rewrite). Added the
+  Rule 4 **CI-coverage** check (does the VS PR-gate actually run the test, or is it
+  skipped → green check ≠ validated → deeper review), the **not-CI-testable →
+  require hardware-pass evidence** rule with the **vendor-own-hardware exception**,
+  and the **approval summary comment** (Rule 8: record type + whether CI ran/passed
+  the test + rationale on every approval). Also: DCO-based signoff detection,
+  Rule 5 re-notify cooldown.

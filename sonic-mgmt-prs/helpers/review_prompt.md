@@ -29,9 +29,10 @@ Output ONLY this brief:
 - **Matches description?:** Yes | Partial | No — <mismatch / scope creep / undisclosed change>
 - **Conflict likelihood:** Low | Med | High — <name overlapping eligible PRs, or "file-isolated">
 - **Duplication likelihood:** <suspected dup PR# or "none seen"> — <reason>
+- **CI actually runs the test?:** Yes | No | Partial | N-A (not a test) — <does the VS/KVM PR-gate execute it, or is it skipped: hardware-only / is_vs_device / platform/ASIC / topology (t2, dualtor) / conditional_mark / skipif / manual? If No/Partial, CI green did NOT validate it → deeper review needed>
 - **Reviewer notes:** <1-2 sentences flagging anything for human attention, or "clean">
 - **Linked issue(s):** <repo#num (issue/PR, state) — auto-close | MANUAL close on merge | track-only; or "none">
-- **Suggested recommendation:** Approve | Request changes | Get another opinion | Reject — <short rationale>
+- **Suggested recommendation:** Approve | Request changes | Get another opinion | Reject — <short rationale; if CI doesn't run the test, lean Get-another-opinion / request a real hardware pass>
 ```
 
 Reviewing rules (see POLICY.md §5 Rule 4):

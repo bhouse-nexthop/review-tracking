@@ -420,3 +420,36 @@ blank; referenced numbers are PRs).
 - **Linked issue(s):** none closeable — references master PR #17641 (a PR); `Fixes #` blank.
 - **Reviewer notes:** Faithful to master; minor PEP8 nit (blank lines before the new module-level function) and conftest-as-importable-module pattern (matches master). PSU hardware isn't author-specific.
 - **Suggested recommendation:** Approve — low-risk faithful backport of an already-merged fix, isolated to a release branch.
+
+---
+
+## CI coverage re-assessment (does the VS/KVM PR-gate actually run the test?)
+
+_Added 2026-06-10 after realizing a green PR-gate only validates a change if CI
+actually **runs** the affected test. Many sonic-mgmt tests are skipped on the
+virtual-switch gate (hardware-only, `device_type('physical')`, platform/ASIC
+gating, a topology the gate doesn't cover like `m1`/dualtor-active-active, or a
+`conditional_mark` skip). A skipped test's green check proves nothing about the
+change — those need deeper review or a **real hardware pass** (Rule 4 / Rule 8)._
+
+| PR | CI runs the test? | Evidence | Revised recommendation |
+|----|-------------------|----------|------------------------|
+| [#24545](https://github.com/sonic-net/sonic-mgmt/pull/24545) | ✅ Yes | removes the `asic_type in ['vs']` skip + adds `is_vs_device` paths → runs on KVM | **Approve** (CI-validated) |
+| [#24876](https://github.com/sonic-net/sonic-mgmt/pull/24876) | ✅ Yes | `topology('any')`, autouse fixture runs on VS t0/t1 | **Approve** (CI-validated) |
+| [#25134](https://github.com/sonic-net/sonic-mgmt/pull/25134) | ✅ Yes | runs in the `t1-lag-vpp` PR-gate job (confirm impacted-area job triggered) | **Approve** (CI-validated; confirm vpp job ran) |
+| [#23930](https://github.com/sonic-net/sonic-mgmt/pull/23930) | N-A (variables) | adds Juniper hwsku to TH5 list so an existing test runs on Juniper gear | **Approve** — vendor-own-hardware exception (Juniper enabling Juniper; no HW evidence needed) |
+| [#24493](https://github.com/sonic-net/sonic-mgmt/pull/24493) | ❌ No | `device_type('physical')`; Mellanox liquid-cooling hardware-only | Vendor-own-hardware (NVIDIA/Mellanox, nhe-NV approved) — trust if no red flags, else HW evidence |
+| [#25000](https://github.com/sonic-net/sonic-mgmt/pull/25000) | ❌ No | `conditional_mark` skips on non-mellanox/broadcom | Borderline — touches mellanox+broadcom (two vendors); trivial None-guard, but request HW pass or 2nd opinion |
+| [#24437](https://github.com/sonic-net/sonic-mgmt/pull/24437) | ⚠️ Partial | runs but early-returns on `vs` before the changed save-results code | Request HW-pass evidence (shared pfcwd test) |
+| [#25094](https://github.com/sonic-net/sonic-mgmt/pull/25094) | ⚠️ Partial | firmware tests skip (no `--fw-pkg`); only CLI validation runs | Request HW-pass evidence |
+| [#24927](https://github.com/sonic-net/sonic-mgmt/pull/24927) | ⚠️ Partial | runs on t0/t1 but NOT on dualtor-active-active (the fixed path) | Request a dualtor-AA / HW pass |
+| [#25012](https://github.com/sonic-net/sonic-mgmt/pull/25012) | ❌ No | `conditional_mark` skips `platform_tests/daemon` on `vs`; author ran NH-4010 | Request HW-pass evidence (shared infra; also COI: needs cross-company approval) |
+| [#25040](https://github.com/sonic-net/sonic-mgmt/pull/25040) | ❌ No | `topology('m1')` — not a PR-gate topology | Request HW/m1-pass evidence (shared bgp suite) |
+| [#24930](https://github.com/sonic-net/sonic-mgmt/pull/24930) | ❌ No | `device_type('physical')` + `asic('cisco-8000')` | Request HW evidence; author affiliation unknown (confirm vendor) |
+| [#18701](https://github.com/sonic-net/sonic-mgmt/pull/18701) | ❌ No | `platform_tests/api` not in the PR-gate at all | Request HW-pass evidence (shared PSU api test) |
+| [#24829](https://github.com/sonic-net/sonic-mgmt/pull/24829) | ❌ branch not hit | new ACL fallback only fires when alias≠name (hardware); VS takes the old branch | Request HW evidence (shared minigraph lib) |
+
+**Bottom line:** only **#24545, #24876, #25134** are genuinely CI-validated. **#23930**
+clears the vendor-own-hardware exception. The rest need a real hardware pass (or, where the
+change is confined to the author's own vendor hardware with no red flags, vendor trust per
+Rule 4) — their green checks did not exercise the change.
