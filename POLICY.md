@@ -429,19 +429,37 @@ every PR resolves to `MERGEABLE`/`CONFLICTING`. Never act on `UNKNOWN`.
 
 ## 8. Author-affiliation resolution
 Resolve in this order; mark **"unknown"** (never guess) if none apply:
-1. **SII author→org map** (authoritative, community-maintained):
-   `sonic-net/sonic-tsc` → `sii_author_map/author.csv` (`login,name,org`; `null`
-   = unknown). Cached locally at `data/author_org_map.csv`; refresh with
+1. **SII author→org map** (community-maintained, but **manually/annually updated —
+   so stale for newer authors**): `sonic-net/sonic-tsc` → `sii_author_map/author.csv`
+   (`login,name,org`; `null` = unknown). Cached at `data/author_org_map.csv`; refresh:
    `gh api repos/sonic-net/sonic-tsc/contents/sii_author_map/author.csv --jq .content | base64 -d > data/author_org_map.csv`.
 2. GitHub profile `company` field.
-3. Verified public email domain.
-4. Login-suffix convention: `-nexthop`→NextHop, `-arista`→Arista,
-   `-cisco`→Cisco, `-nv`/`-nvidia`→NVIDIA, `-ms`/`-msft`/`-microsoft`→Microsoft,
-   `-nokia`→Nokia, `[Marvell]`/`-marvell`→Marvell, etc.
+3. **Email-domain → org** — the key fallback for authors absent from the map. Map
+   a corporate **commit or profile email** domain to an org (e.g. `@nvidia.com`→Nvidia,
+   `@sub.cisco.com`→Cisco via parent domain); skip `users.noreply`/personal domains.
+   The review/merge flows have commit-author emails available and should prefer them.
+4. Login-suffix convention: `-nexthop`→NextHop, `-arista`→Arista, `-cisco`→Cisco,
+   `-nv`/`-nvidia`→NVIDIA, `-ms`/`-msft`/`-microsoft`→Microsoft, `-nokia`→Nokia,
+   `[Marvell]`/`-marvell`→Marvell, etc.
 5. Org membership.
 
-The map doesn't cover everyone (e.g. NextHop authors and some newer logins are
-absent) — those still fall through to the profile/suffix heuristics.
+### Org-name canonicalization & dedup
+Org strings are inconsistent across sources ("Dell" vs "Dell Technologies",
+"NVIDIA"/"Nvidia Networking"/"Mellanox", "Keysight Technologies Inc"). Reconcile
+**logically first, then with a small curated map**:
+- **Logical:** lowercase, strip punctuation, drop legal/suffix tokens (`Inc`,
+  `Ltd`, `Technologies`, `Corp`, …). This collapses "Dell Technologies"→`dell`,
+  "Keysight Technologies Inc"→`keysight`, "Microsoft Corporation"→`microsoft`.
+- **Curated alias map** for what logic can't derive: `Mellanox→Nvidia`,
+  `Alphabet→Google`, `MSFT→Microsoft`, etc.
+- When loading `sii_org_predict.csv`, **aggregate scores by canonical name** (max),
+  so duplicate rows like "Dell" (62) and "Dell Technologies" (3074) merge into one
+  `dell` entry at the higher score.
+- Maps live in the editable `data/org_normalization.json` (legal suffixes, aliases,
+  email domains) — update there, not in code.
+
+The map still doesn't cover everyone (NextHop authors, brand-new logins) — those
+fall through to email-domain / suffix, else `unknown`.
 
 ## 8.1 Author trust (review-scrutiny weighting)
 A per-author trust level that modulates **how much scrutiny** a PR gets — it is an

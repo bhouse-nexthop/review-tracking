@@ -1,0 +1,44 @@
+{
+  "_comment": "Affiliation normalization for reconciling org names across author.csv, sii_org_predict.csv, and free-text profile/email. Edit as needed. legal_suffixes are stripped during canonicalization; aliases map a normalized variant -> normalized canonical; email_domains map a commit/profile email domain -> display org name (then canonicalized).",
+  "legal_suffixes": [
+    "inc", "llc", "ltd", "limited", "corp", "corporation", "co", "company",
+    "gmbh", "ag", "sa", "plc", "technologies", "technology", "labs"
+  ],
+  "aliases": {
+    "mellanox": "nvidia",
+    "nvidia networking": "nvidia",
+    "alphabet": "google",
+    "msft": "microsoft",
+    "ms": "microsoft",
+    "microsoft corporation": "microsoft",
+    "dell": "dell",
+    "aws": "amazon"
+  },
+  "email_domains": {
+    "microsoft.com": "Microsoft",
+    "nvidia.com": "Nvidia",
+    "mellanox.com": "Nvidia",
+    "google.com": "Google",
+    "arista.com": "Arista",
+    "cisco.com": "Cisco",
+    "nexthop.ai": "NextHop",
+    "broadcom.com": "Broadcom",
+    "nokia.com": "Nokia",
+    "marvell.com": "Marvell",
+    "dell.com": "Dell Technologies",
+    "alibaba-inc.com": "Alibaba",
+    "alibaba.com": "Alibaba",
+    "intel.com": "Intel",
+    "keysight.com": "Keysight",
+    "juniper.net": "Juniper",
+    "aviz.io": "Aviz Networks",
+    "tencent.com": "Tencent",
+    "edge-core.com": "EdgeCore",
+    "orange.com": "Orange",
+    "linkedin.com": "Linkedin",
+    "uber.com": "Uber",
+    "celestica.com": "Celestica",
+    "accton.com": "accton",
+    "ragilenetworks.com": "ragilenetworks"
+  }
+}

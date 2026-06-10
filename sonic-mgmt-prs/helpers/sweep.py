@@ -176,9 +176,52 @@ def load_author_map():
     return _author_map
 
 
+_orgnorm = None
+
+
+def load_org_norm():
+    global _orgnorm
+    if _orgnorm is None:
+        path = os.path.join(ROOT, "data", "org_normalization.json")
+        _orgnorm = json.load(open(path)) if os.path.exists(path) else \
+            {"legal_suffixes": [], "aliases": {}, "email_domains": {}}
+    return _orgnorm
+
+
+def canonical_org(name):
+    """Normalize an org string for matching/dedup: lowercase, drop punctuation and
+    legal suffixes, apply the alias map. '' if empty/unknown."""
+    if not name or name.lower() == "unknown":
+        return ""
+    norm = load_org_norm()
+    s = "".join(c if c.isalnum() else " " for c in name.lower())
+    toks = [t for t in s.split() if t not in set(norm.get("legal_suffixes", []))]
+    canon = " ".join(toks).strip()
+    return norm.get("aliases", {}).get(canon, canon)
+
+
+def affil_from_email(email):
+    """Org from a corporate email domain (skips users.noreply); None if unknown."""
+    if not email or "@" not in email:
+        return None
+    dom = email.rsplit("@", 1)[-1].lower().strip()
+    if not dom or dom.endswith("users.noreply.github.com"):
+        return None
+    domains = load_org_norm().get("email_domains", {})
+    if dom in domains:
+        return domains[dom]
+    # try parent domain (foo.bar.com -> bar.com)
+    parts = dom.split(".")
+    if len(parts) > 2:
+        return domains.get(".".join(parts[-2:]))
+    return None
+
+
 def affil_of(login):
-    """Resolve a login's affiliation (cached). Order: SII author->org map (authoritative)
-    -> GitHub profile company -> login-suffix heuristic -> unknown."""
+    """Resolve a login's affiliation (cached). Order: SII author->org map (authoritative
+    but stale) -> profile company -> profile public-email domain -> login-suffix -> unknown.
+    The author map is manually/annually maintained, so the email-domain fallback covers
+    the long tail of authors not yet listed."""
     if not login:
         return "unknown"
     if login in _affil_cache:
@@ -186,9 +229,11 @@ def affil_of(login):
     org = load_author_map().get(login.lower())
     if not org:
         d = gh_json(["api", f"users/{login}"]) or {}
-        org = affiliation(login, d.get("company"))
-    _affil_cache[login] = org
-    return org
+        org = (d.get("company") and affiliation(login, d.get("company"))) or None
+        if not org or org == "unknown":
+            org = affil_from_email(d.get("email")) or affiliation(login, None)
+    _affil_cache[login] = org or "unknown"
+    return _affil_cache[login]
 
 
 def is_nexthop(login, affil=None):
@@ -202,13 +247,14 @@ MIN_COMPANY_SCORE = 1500.0
 
 
 def load_top_companies():
-    """SONiC contributor orgs with sii_org_predict score > MIN_COMPANY_SCORE,
-    EXCLUDING 'Others'. Returns a list of (org_lower, rank) — rank is overall
-    position by score among non-Others orgs."""
+    """Contributor orgs with sii_org_predict score > MIN_COMPANY_SCORE, EXCLUDING
+    'Others'. Scores are aggregated by CANONICAL org name (so 'Dell' + 'Dell
+    Technologies' merge into one, taking the max score). Returns a list of
+    (canonical_org, rank) for the qualifying orgs, ranked by score."""
     global _top_orgs
     if _top_orgs is not None:
         return _top_orgs
-    rows = []
+    agg = {}
     if os.path.exists(ORG_PREDICT_CSV):
         import csv
         with open(ORG_PREDICT_CSV, newline="") as f:
@@ -217,23 +263,25 @@ def load_top_companies():
             for row in r:
                 if len(row) >= 2 and row[0].strip().lower() != "others":
                     try:
-                        rows.append((row[0].strip(), float(row[1])))
+                        c = canonical_org(row[0])
+                        agg[c] = max(agg.get(c, 0.0), float(row[1]))
                     except ValueError:
                         pass
-    rows.sort(key=lambda x: -x[1])
-    _top_orgs = [(o.lower(), i + 1) for i, (o, s) in enumerate(rows) if s > MIN_COMPANY_SCORE]
+    ranked = sorted(agg.items(), key=lambda x: -x[1])
+    _top_orgs = [(c, i + 1) for i, (c, s) in enumerate(ranked) if s > MIN_COMPANY_SCORE]
     return _top_orgs
 
 
 def top_company_rank(affil):
-    """If the affiliation matches a contributor company with score > MIN_COMPANY_SCORE,
-    return its rank, else None."""
-    if not affil or affil.lower() == "unknown":
+    """If the affiliation canonicalizes to a contributor company with score >
+    MIN_COMPANY_SCORE, return its rank, else None."""
+    ac = canonical_org(affil)
+    if not ac:
         return None
-    a = affil.lower()
+    at = set(ac.split())
     for org, rank in load_top_companies():
-        first = org.split()[0]
-        if org in a or a in org or first == a.split()[0]:
+        ot = set(org.split())
+        if ot and (ot <= at or at <= ot):          # token-subset either way
             return rank
     return None
 
