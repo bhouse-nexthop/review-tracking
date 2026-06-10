@@ -326,6 +326,138 @@ def execute(plan, apply):
             print(f"  DID  {act:14} #{row['pr']}: {url}")
 
 
+WEAK_MSG = re.compile(r'^(wip|fix(es|ed)?|update|changes?|address(ed)? comments?|review comments?|'
+                      r'minor|cleanup|\.+|tmp|temp|test)\.?$', re.I)
+
+
+def pr_commits(pr):
+    d = gh_json(["pr", "view", str(pr), "--repo", REPO, "--json", "commits"]) or {}
+    return d.get("commits", [])
+
+
+def commit_signoff_author(commits):
+    """(name, email) for the Signed-off-by, from the PR's commit author metadata."""
+    for c in commits:
+        for a in (c.get("authors") or []):
+            if a.get("email") and a.get("name"):
+                return a["name"], a["email"]
+    return None, None
+
+
+def has_signoff(commits):
+    return all(re.search(r'^\s*Signed-off-by:', (c.get("messageBody") or ""), re.M)
+               or re.search(r'Signed-off-by:', (c.get("messageHeadline") or ""))
+               for c in commits) if commits else False
+
+
+def compose_squash_message(d, commits):
+    """Return (subject, body) for the squash commit, preferring the author's
+    commit message, guaranteeing a Signed-off-by, and never a Co-authored-by."""
+    if len(commits) == 1:
+        subject = commits[0].get("messageHeadline") or d["title"]
+        body_src = commits[0].get("messageBody") or ""
+    else:
+        subject = d["title"]
+        body_src = "\n".join(f"- {c.get('messageHeadline','')}" for c in commits)
+    # strip any Co-authored-by lines and collect existing Signed-off-by lines
+    body_lines, signoffs = [], []
+    for ln in body_src.splitlines():
+        if re.match(r'\s*Co-authored-by:', ln, re.I):
+            continue
+        if re.match(r'\s*Signed-off-by:', ln, re.I):
+            signoffs.append(ln.strip())
+            continue
+        body_lines.append(ln)
+    if not signoffs:
+        name, email = commit_signoff_author(commits)
+        if email:
+            signoffs.append(f"Signed-off-by: {name} <{email}>")
+    body = "\n".join(body_lines).strip()
+    if signoffs:
+        body = (body + "\n\n" + "\n".join(dict.fromkeys(signoffs))).strip()
+    return subject, body
+
+
+def merge_pr(pr, apply):
+    """Squash-merge (or rebase for large auditable PRs) after verifying preconditions."""
+    d = gh_json(["pr", "view", str(pr), "--repo", REPO, "--json",
+                 "title,author,mergeable,reviewDecision,isDraft,statusCheckRollup,"
+                 "additions,deletions,headRefName,baseRefName"])
+    if not d:
+        raise SystemExit(f"PR #{pr} not found")
+    # mergeable is lazy: re-poll a few times if UNKNOWN
+    tries = 0
+    while d.get("mergeable") == "UNKNOWN" and tries < 4:
+        tries += 1
+        d2 = gh_json(["pr", "view", str(pr), "--repo", REPO, "--json", "mergeable"]) or {}
+        d["mergeable"] = d2.get("mergeable", "UNKNOWN")
+    ci, _ = ci_state(d.get("statusCheckRollup"))
+    ledger = load_ledger()
+    miss = []
+    if d.get("reviewDecision") != "APPROVED":
+        miss.append(f"reviewDecision={d.get('reviewDecision')} (need human APPROVED)")
+    if d.get("mergeable") != "MERGEABLE":
+        miss.append(f"mergeable={d.get('mergeable')}")
+    if ci != "PASS":
+        miss.append(f"CI={ci}")
+    if d.get("isDraft"):
+        miss.append("draft")
+    if any(e["pr"] == pr and e["action"] == "misleading_flag" for e in ledger):
+        miss.append("open misleading_flag (not reviewable)")
+    if miss:
+        print(f"#{pr}: NOT merging — preconditions unmet: {'; '.join(miss)}")
+        return
+    commits = pr_commits(pr)
+    total = (d.get("additions", 0) or 0) + (d.get("deletions", 0) or 0)
+    rebase = (total > 1000 and len(commits) > 1)
+    method = "rebase" if rebase else "squash"
+    subject, body = compose_squash_message(d, commits)
+    print(f"#{pr}: merge method = {method}  (lines={total}, commits={len(commits)})")
+    if rebase:
+        print("  large + multi-commit: preserving commits (verify they're independently auditable)")
+        print("  each commit keeps its own message + Signed-off-by")
+    else:
+        print(f"  squash subject: {subject}")
+        print("  squash body:\n    " + body.replace("\n", "\n    "))
+    if not apply:
+        print("  (dry-run — pass --apply to merge)")
+        return
+    if rebase:
+        cmd = ["gh", "pr", "merge", str(pr), "--repo", REPO, "--rebase"]
+    else:
+        cmd = ["gh", "pr", "merge", str(pr), "--repo", REPO, "--squash",
+               "--subject", subject, "--body", body]
+    out = subprocess.run(cmd, capture_output=True, text=True)
+    if out.returncode != 0:
+        sys.stderr.write(out.stderr); raise SystemExit("merge failed")
+    append_ledger({"pr": pr, "action": "merge", "date": today(), "detail": f"{method}: {subject}"})
+    print(f"  MERGED (#{pr}, {method}).")
+    # close-on-merge for linked issues (Rule 6)
+    close_issues_for_merged_pr(pr, apply=True)
+
+
+def report_commit_hygiene():
+    """Flag PRs whose commit messages are weak or missing Signed-off-by (Rule 9)."""
+    lst = gh_json(["pr", "list", "--repo", REPO, "--search",
+                   f"review-requested:{REVIEWER}", "--state", "open",
+                   "--json", "number,author", "--limit", "200"]) or []
+    print(f"# Commit-message hygiene — {REPO} (Rule 9)\n")
+    for d in sorted(lst, key=lambda x: -x["number"]):
+        commits = pr_commits(d["number"])
+        if not commits:
+            continue
+        weak = [c.get("messageHeadline", "") for c in commits
+                if WEAK_MSG.match((c.get("messageHeadline") or "").strip())]
+        nosign = not has_signoff(commits)
+        if weak or nosign:
+            flags = []
+            if weak:
+                flags.append(f"weak headline(s): {weak}")
+            if nosign:
+                flags.append("missing Signed-off-by")
+            print(f"#{d['number']} ({(d.get('author') or {}).get('login','?')}) — {'; '.join(flags)}")
+
+
 def report_issue_linkage():
     """Print, per PR, linked issues and which need a MANUAL close on merge."""
     detail = fetch_prs()
@@ -396,8 +528,18 @@ def main():
                     help="report issue linkage + manual-close-on-merge candidates (uses API)")
     ap.add_argument("--close-issues", type=int, metavar="PR",
                     help="after MERGE: close the manual-close issue candidates for PR + log issue_close")
+    ap.add_argument("--merge", type=int, metavar="PR",
+                    help="squash-merge (rebase if large+auditable) PR after checking preconditions (Rule 8)")
+    ap.add_argument("--commits", action="store_true",
+                    help="report commit-message hygiene across the queue (Rule 9)")
     args = ap.parse_args()
 
+    if args.merge:
+        merge_pr(args.merge, args.apply)
+        return
+    if args.commits:
+        report_commit_hygiene()
+        return
     if args.close_issues:
         close_issues_for_merged_pr(args.close_issues, args.apply)
         return

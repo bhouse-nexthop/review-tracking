@@ -50,7 +50,8 @@ Every action is appended to `<repo>/actions.jsonl`, one JSON object per line:
 ```
 
 Action types: `conflict_ping`, `azp_run`, `ci_fail_notify`, `deep_review`,
-`escalate`, `issue_close`, `title_desc_edit`.
+`escalate`, `issue_close`, `title_desc_edit`, `misleading_flag`,
+`commit_msg_notice`, `merge`.
 
 **Golden rule — check the ledger before acting.** No rule fires for a PR if an
 equivalent action already exists for the current episode. This is what stops
@@ -232,7 +233,17 @@ future readers can understand what changed.
   beyond `Fixes # (issue)`, all Approach sections blank), or a description that
   plainly doesn't reflect what the diff does. If the title/description is merely
   terse-but-clear, **leave it**.
-- **How to edit:**
+- **Misleading ≠ inadequate — flag, do NOT rewrite.** A separate, more serious
+  case: the title/description **claims something the diff does not actually do**
+  (or contradicts the diff). We must **not** rewrite it — we don't know the real
+  intent, and the discrepancy means **we cannot properly review the PR at all**.
+  Instead post a comment flagging the specific discrepancy, ask the author to
+  clarify/correct intent, record a `misleading_flag`, and treat the PR as **not
+  reviewable / blocked** until resolved (it does not merge — see Rule 8). This is
+  distinct from "inadequate": inadequate = unclear-but-consistent (we rewrite);
+  misleading = actively wrong about what it does (we block and ask). The Rule 4
+  "Matches description? = No" finding feeds directly into this.
+- **How to edit (inadequate case only):**
   - Keep it **as short as possible** while accurately reflecting what the PR
     does — someone may reference it later. No padding.
   - **Follow the repo PR template** (Description/Summary, Type of change, Back
@@ -254,6 +265,65 @@ future readers can understand what changed.
   contributors. Community standing matters more than venting.
 - **Idempotency:** record `title_desc_edit` (§3); don't re-edit unless the
   author regresses it.
+
+### Rule 8 — Merge & squash procedure
+Once a PR is genuinely ready, the agent may perform the merge (after human
+approval — see preconditions), applying these rules.
+
+- **Preconditions (ALL required before the agent merges):**
+  1. **Human approval** — `reviewDecision == APPROVED` from a human maintainer
+     (not a bot, not us auto-approving). Approval is still a human decision.
+  2. CI green (latest = PASS), `mergeable == MERGEABLE`, not a draft.
+  3. **No open `misleading_flag`** and no unresolved blocking review on the PR
+     (a misleading/unclear description means it isn't reviewable → don't merge).
+  4. Linked issues noted for close-on-merge (Rule 6).
+  The agent never merges on a third-party approval alone without these met; when
+  in doubt, leave it for the human.
+- **Method — squash by default.** Use squash-merge for essentially everything.
+  - **Exception → rebase-and-merge:** only when the PR is **large (>1000 lines
+    total)** **and** its commits are **individually, independently auditable**
+    (each a coherent, separately-reviewable change). Then rebase-and-merge to
+    preserve those commits on a linear history. If it's big but the commits are
+    messy/WIP, still squash. When unsure, squash.
+- **Squash commit message:**
+  - **Prefer the author's commit message.** If the PR's commit message is
+    reasonable, use it (subject from the PR title or the commit headline; body
+    from the author's commit body). Only rewrite it if it's inadequate
+    (Rule 9) — keep it short and accurate, never fabricate.
+  - **`Signed-off-by` is required (DCO-gated repo).** Ensure the message ends
+    with `Signed-off-by: <Author Name> <author git-commit email>` taken from the
+    PR commit author metadata (fall back to the GitHub display name only if the
+    commit email is a `users.noreply` address). If the author's signoff is
+    already present, keep it; don't duplicate.
+  - **NEVER add a `Co-authored-by` line.** Strip any that GitHub would auto-add.
+  - Do not invent test/verification claims.
+- **Rebase case:** each preserved commit keeps its own message + signoff; we
+  don't rewrite individual commit messages (if one is inadequate, that's a
+  Rule 9 comment, not a block).
+- **On merge:** run the close-on-merge step (Rule 6) for linked issues and
+  record a `merge` ledger entry (detail = method + resulting commit/PR).
+- **Tooling:** `sweep.py --merge <PR>` is dry-run by default (prints method +
+  the exact squash message it would use); `--apply` executes after re-checking
+  every precondition.
+
+### Rule 9 — Commit-message hygiene
+Commit messages matter as much as the PR description — at squash time the commit
+message is what we *prefer* for the permanent record, so encourage good ones.
+
+- **Sweep:** check each PR's commit message(s) for: (a) a reasonable, descriptive
+  message (not `wip`, `fix`, `address comments`, `.`), and (b) a
+  `Signed-off-by: Full Name <email>` trailer (DCO requires it anyway).
+- **Inadequate (vague but not wrong) → comment, don't block.** Post a
+  firm-professional comment stating the policy: squashable, reasonable commit
+  messages with a `Signed-off-by` line, and **no `Co-authored-by`**. Do **not**
+  hold the PR waiting for the author to amend — we can approve/merge and, if the
+  message is inadequate, **rewrite the squash message at merge** (Rule 8),
+  preferring the author's wording and adding their `Signed-off-by`.
+- **Misleading (claims what the change doesn't do) → flag + block.** Same as the
+  misleading case in Rule 7: record a `misleading_flag`, ask for clarification,
+  and do not merge until resolved.
+- Record a `commit_msg_notice` when we leave a policy comment (idempotent: once
+  per PR unless the messages regress).
 
 ## 6. State transitions (lifecycle of one PR)
 
@@ -318,4 +388,8 @@ no effect, the commenter may lack trigger rights.
   close-on-merge, incl. cross-repo / missing-keyword detection) added the same
   day. Rule 7 (fix woefully-inadequate PR titles/descriptions + firm-professional
   author notice; applies to the whole queue, not just review-ready PRs) added the
-  same day.
+  same day. Rule 8 (squash-by-default merge, rebase exception for large auditable
+  PRs, prefer author commit message, author Signed-off-by, never Co-authored-by,
+  agent merges after human approval) and Rule 9 (commit-message hygiene) added the
+  same day, plus the misleading-vs-inadequate distinction (misleading title /
+  description / commit message → flag & block, never silently rewrite).

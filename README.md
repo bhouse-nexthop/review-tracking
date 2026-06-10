@@ -23,5 +23,14 @@ python3 helpers/sweep.py --apply    # post comments (rules 1/2/3/5) + update act
 Deep reviews (Rule 4) are produced separately and recorded with
 `helpers/sweep.py --record-review <PR>`. See POLICY.md §5.
 
+Other modes:
+```bash
+python3 helpers/sweep.py --issues            # linked-issue / close-on-merge report (Rule 6)
+python3 helpers/sweep.py --commits           # commit-message hygiene report (Rule 9)
+python3 helpers/sweep.py --merge <PR>        # dry-run squash/rebase plan + message (Rule 8)
+python3 helpers/sweep.py --merge <PR> --apply     # execute the merge (after human approval)
+python3 helpers/sweep.py --close-issues <PR> --apply  # manual issue close after merge (Rule 6)
+```
+
 This repo contains no secrets; it relies on the local `gh` CLI being
 authenticated as the reviewer.
