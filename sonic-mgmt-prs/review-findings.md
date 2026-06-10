@@ -2,16 +2,16 @@
 
 **PRs awaiting our action**, sorted by recommendation — each links to its full brief (click → read → back → next). A PR drops off this doc once it's **approved/merged** or **handed back to the author** (changes/info/evidence requested, conflicting, COI-waiting); full state + history live in `actions.jsonl` + git. Recommendations fold in: does the diff match the description, complexity, **author trust** (§8.1), and **whether CI actually runs the test** (a green check on a skipped test proves nothing — see CI column). _Decision support; approval is the human reviewer's call._
 
-**Tally:** Approve: 4 · Get another opinion: 5 · Blocked (COI): 2  
+**Tally:** Approve: 3 · Get another opinion: 5 · Blocked (COI): 2  
+_(#20001 → asked author to confirm it's not stale (xfail for swss#3498); #18660 closed by author.)_
 _(Newly reviewed this sweep; #18660 was closed by its author — superseded by #22982.)_
 _(Everything else this cycle is off-doc: 7 merged, 13 change/evidence requests out — all formal blocking Request-changes reviews. See actions.jsonl.)_
 _(Off-doc — awaiting author: #24247, #24320, #24845 (changes requested), #24975 (changes requested). Merged this cycle: #23930, #24493, #24545, #24597, #24876, #25134.)_
 
-## Approve (4)
+## Approve (3)
 
 | PR | Title | Type/Trust | CI runs test? | Why |
 |----|-------|-----------|---------------|-----|
-| [#20001](#pr-20001) | Mark Sub port interface port-in-lag cases xFAIL | Test xfail (marker) / Low | Yes | xfail gated on open swss#3498 + t1; self-disarms; clean YAML |
 | [#23606](#pr-23606) | Add tests for static route removal after config reload | New test case / Expert | Yes (t0+dualtor) | CI-validated; minor optional note on a weak BGP-redistribution assertion |
 | [#24649](#pr-24649) | [dualtor] Add tunnel-termination drop test on standby ToR | New test suite / Expert | No (dualtor not in gate) | author linked real HW runs (Cisco 8101 + Arista) → evidence met; closes #21092 |
 | [#24687](#pr-24687) | pfcwd: ignore benign cisco-8000 SAI/orchagent errors | Bug fix (loganalyzer) / Expert | Partial (cisco-8000 branch not on vs) | additive asic-gated ignore-list, idiomatic, low risk |
@@ -169,24 +169,6 @@ _Ordered by recommendation, same as above._
 
 [↑ back to recommendations](#deep-review-findings--sonic-netsonic-mgmt--2026-06-10)
 
-
-<a id="pr-20001"></a>
-
-### [PR #20001](https://github.com/sonic-net/sonic-mgmt/pull/20001) — Marking Sub port interface port-in lag cases xFAIL due to community issues
-- **➡ Recommendation:** Approve — 12-line conditional_mark xfail, gated on an open issue URL AND `'t1' in topo_name`, so it self-disarms when sonic-swss#3498 closes. Low blast radius.
-- **Author / affiliation / trust:** apannerselva / Marvell (commit email apannerselva@marvell.com) / Low (3 merged)
-- **CI runs the test?:** Yes — `sub_port_interfaces/test_sub_port_interfaces.py` is in the `t1-lag` gate block; the xfail keys on `'t1' in topo_name`, so the affected params execute on the VS gate.
-- **Type:** Test marker / xfail metadata
-- **Complexity:** Low — pure YAML, two test IDs, no code paths touched.
-- **Description summary:** Adds conditional xfail for the two `test_routing_between_sub_ports_and_port[port_in_lag-l3/svi]` params, gated on open sonic-swss#3498 and t1 topology, to stop them failing CI while the upstream PVID bug is unresolved.
-- **Existing reviews/comments:** yxieca AI review (DISMISSED, no issues); 202505/202511 backport labels.
-- **Matches description?:** Yes.
-- **Conflict likelihood:** Low — appends two stanzas in a frequently-edited file; trivially rebaseable.
-- **Duplication likelihood:** none seen.
-- **Linked issue(s):** sonic-swss#3498 (open) — drives the xfail; no `Fixes #` (correct for a marker PR).
-- **Reviewer notes:** Verified the URL-in-condition pattern is canonical and `update_issue_status` substitutes live open/closed before eval; uses non-strict `xfail` so a future XPASS won't hard-fail.
-
-[↑ back to recommendations](#deep-review-findings--sonic-netsonic-mgmt--2026-06-10)
 
 <a id="pr-23606"></a>
 

@@ -272,6 +272,17 @@ elif CI == PENDING:                  -> no-op (a run is in flight; wait for next
     can be too short under load and wastes time otherwise. Please gate it on the
     actual readiness condition instead, e.g. `<until/retries or wait_until>`. Happy
     to re-review once it polls for readiness rather than sleeping."
+- **Red flag — `xfail`/`skip` justified by an external issue: verify the issue is
+  genuinely still live.** A PR that marks a test `xfail`/`skip` "due to issue #N"
+  is only valid while #N actually reproduces. Don't take a nominally-**open**
+  issue at face value — a long-stale issue with little recent community traffic
+  (for a bug that, if real, would affect many) is a strong signal it may already be
+  resolved. Masking a now-passing test with an `xfail` **hides future regressions**.
+  Tells that it's stale: the PR/CI shows the cases **XPASS** (pass despite the
+  xfail), the issue has been quiet for a long time, or the fix landed upstream.
+  When in doubt, **ask the author (blocking) to confirm it still reproduces** — a
+  recent run showing a consistent XFAIL (not XPASS) — or to drop the xfail. Same
+  spirit as the conflict/relevance check, applied to issue-justified masking.
 - **Affiliation-aware reviewing:** defer to the author's company on facts about
   that company's **own** hardware/platform/products. Do not raise questions an
   author from that vendor is authoritative on — e.g. don't ask a Juniper
