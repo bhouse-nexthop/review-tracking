@@ -105,3 +105,13 @@
 {"pr": 25123, "action": "opinion_request", "date": "2026-06-10", "detail": "https://github.com/sonic-net/sonic-mgmt/pull/25123#issuecomment-4673559852", "ts": "2026-06-10T19:09:55Z"}
 {"pr": 21658, "action": "changes_requested", "date": "2026-06-10", "detail": "defer to r12f + snappi pass + docstring", "ts": "2026-06-10T19:09:55Z"}
 {"pr": 21660, "action": "changes_requested", "date": "2026-06-10", "detail": "defer to r12f + snappi pass + docstring", "ts": "2026-06-10T19:09:55Z"}
+{"pr": 24802, "action": "ci_fail_notify", "date": "2026-06-11", "detail": "https://github.com/sonic-net/sonic-mgmt/pull/24802#issuecomment-4681509274", "ts": "2026-06-11T14:15:45Z"}
+{"pr": 20841, "action": "ci_fail_notify", "date": "2026-06-11", "detail": "https://github.com/sonic-net/sonic-mgmt/pull/20841#issuecomment-4681509455", "ts": "2026-06-11T14:15:46Z"}
+{"pr": 20841, "action": "commit_msg_notice", "date": "2026-06-11", "detail": "https://github.com/sonic-net/sonic-mgmt/pull/20841#issuecomment-4681511460", "ts": "2026-06-11T14:15:59Z"}
+{"pr": 24591, "action": "deep_review", "date": "2026-06-11", "detail": "Request changes: yxieca CHANGES_REQUESTED + CodeQL empty-except open at HEAD", "sha": "93ed17efe390ccd983bd5a7ecc5f48ee2f7c1779", "ts": "2026-06-11T14:23:05Z"}
+{"pr": 24217, "action": "deep_review", "date": "2026-06-11", "detail": "Approve: well-justified issue-gated xfail (#24558 open), SPC1/SPC3 scoped", "sha": "50b933d00583bc6fe25e5ba75ffe455448453d57", "ts": "2026-06-11T14:23:05Z"}
+{"pr": 24091, "action": "deep_review", "date": "2026-06-11", "detail": "Approve: confed config internally consistent across both files; reviewer threads resolved", "sha": "a8974d96e42c47e3857156bb1064f0541f3b8bc0", "ts": "2026-06-11T14:23:06Z"}
+{"pr": 23542, "action": "deep_review", "date": "2026-06-11", "detail": "Approve: small correct LAG/non-LAG ACL fix; CI no-op on gated topos, author validated on mixed topo", "sha": "5d23c5101bce74a897cb417b0cbba86d227fcb3b", "ts": "2026-06-11T14:23:06Z"}
+{"pr": 23283, "action": "deep_review", "date": "2026-06-11", "detail": "Get another opinion (COI NextHop): ZhaohuiS design concern OPEN + StormLiangMS stale CHANGES_REQUESTED", "sha": "9e12b82756d29b722e1f64438db761322a033b6b", "ts": "2026-06-11T14:23:06Z"}
+{"pr": 21429, "action": "deep_review", "date": "2026-06-11", "detail": "Approve: all 7 deepak points resolved, CI runs t0/t1/t2; refresh stale description", "sha": "4f491a46484e5ff0d47cf325b2aa59ce9caa09c9", "ts": "2026-06-11T14:23:07Z"}
+{"pr": 17940, "action": "deep_review", "date": "2026-06-11", "detail": "Request changes: wangxin CHANGES_REQUESTED + 16 open inline issues, stale 3mo", "sha": "74866cda4c6b4d798bd02e34b801ad296190e910", "ts": "2026-06-11T14:23:07Z"}

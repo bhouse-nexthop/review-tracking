@@ -110,6 +110,15 @@ repeated pings and repeated `/azp run`. Concretely:
    per the §10 inclusion rule), sorted by recommendation with anchor links.
 6. **Report** to the human: new actions taken, escalations, and the current
    awaiting-our-action set.
+7. **Commit & push — always, every cycle.** Any change this repo makes to its own
+   tracked files — `actions.jsonl` (the ledger), `review-findings.md`, the
+   `helpers/` tool, `data/` snapshots, or these docs — **must be committed and
+   pushed** before the cycle is considered done. The ledger is the system of
+   record and is worthless if it lives only in an uncommitted working tree: commit
+   it so the idempotency state survives, and push so it's durable and shared. This
+   applies to **every** change, not just sweeps — if you edit the tool or the
+   policy, commit and push that too. Never leave the working tree dirty at the end
+   of a task.
 
 ### Decision order per PR
 
@@ -165,6 +174,16 @@ elif CI == PENDING:                  -> no-op (a run is in flight; wait for next
   `deep_review` for the current head SHA.
 - **Action:** produce a **review brief** (one per PR) and record `deep_review`.
   Present briefs to the human; do not approve.
+- **Start from the scaffold.** `helpers/sweep.py --scaffold-review <PR>` (or
+  `--scaffold-eligible` for the whole eligible set) prints a brief skeleton with
+  every mechanically-derivable field pre-filled — author/affiliation/trust,
+  file/LOC/complexity, formal reviews, **inline threads** (so you don't hand-run
+  the `pulls/<n>/comments` query), parsed linked issues, peer-PR file overlap, and
+  a **CI-runs-the-test heuristic** (scans the added diff for `is_vs_device`/
+  `skipif`/`conditional_mark`/topology gates). The four judgment fields
+  (matches-description, conflict/dup read, reviewer notes, recommendation) and the
+  CI verdict are left as `_TODO_` for you to fill **after reading the diff** — the
+  heuristic is a starting flag, never the final answer.
 - **Read the INLINE review comments, not just the review state.** A review can be
   recorded as `COMMENTED` while its **inline/line comments are substantive change
   requests** (a maintainer often comments rather than formally "Request changes").
@@ -678,7 +697,10 @@ no effect, the commenter may lack trigger rights.
   the author responds — which is what brings a PR *back* into `review-findings.md`.
   This, not a markdown table, is the complete per-PR state.
 - **`helpers/`** — the sweep tool (maintains the ledger; posts rule comments) and
-  the review prompt. The sweep does **not** emit a human table.
+  the review prompt. The sweep does **not** emit a human table. Useful modes:
+  `--scaffold-review <PR>` / `--scaffold-eligible` (Rule 4 brief skeletons),
+  `--trust <login>`, `--suggest-reviewers <PR>`, `--issues`, `--commits`,
+  `--merge <PR>`.
 - **`data/`** — the affiliation/score maps + raw snapshots (`author_org_map.csv`,
   `sii_org_predict.csv`, `org_normalization.json`, last-sweep JSON).
 - There is intentionally **no `review-queue.md`** — full status is the JSON's job;
@@ -689,9 +711,18 @@ Regeneration includes a PR **iff** it currently needs our action — i.e. it has
 `deep_review` (or is review-eligible) and its latest ledger action is **not** one of
 the "handed-off" types (`approve`*/`merge`, `changes_requested`, `evidence_request`,
 `opinion_request`, `conflict_ping`, `azp_run`, `ci_fail_notify`, `escalate`), and we
-have not approved it. When the author responds (PR updated after our hand-off
-action), it re-enters on the next regeneration. (*approval is detected from our
-GitHub review, not a ledger row.)
+have not approved it. When the author responds, it re-enters on the next
+regeneration. (*approval is detected from our GitHub review, not a ledger row.)
+
+**"Responded" means a genuine human response — not an `updatedAt` bump.** A PR
+returns to our court only when a **non-self, non-bot** actor leaves a comment or
+submits a review **after** our hand-off timestamp (`helpers/sweep.py` reads the
+comment/review timeline; it does **not** trust `updatedAt`, which our own comments,
+the `/azp run` we post, and the CI bot all move). For legacy **date-only** ledger
+entries the exact time is unknown, so a same-day comment is **not** counted — the
+response must land on a strictly later day. The sweep's `re-evaluate` section lists
+each flagged PR with **who responded, what (comment / review:STATE), when, and which
+of our actions it follows**, so the re-evaluation is actionable at a glance.
 
 ## 11. Change log
 - **2026-06-10** — initial policy. Rules 1–4 established during the first
@@ -717,3 +748,15 @@ GitHub review, not a ledger row.)
   `review-findings.md` (undated, minimal — only PRs awaiting our action; removed when
   complete or handed-off) backed by `actions.jsonl`; `review-queue.md` removed.
   Affiliation now also uses email-domain resolution + org-name canonicalization/dedup.
+- **2026-06-11** — second sweep + tooling iteration. (1) **Re-evaluate accuracy:**
+  replaced the `updatedAt > our-action` proxy (which counted our own comments, the
+  `/azp run` we posted, and CI-bot status as "responses" — 30 flagged when only 3
+  were real) with timeline-based detection of a genuine non-self/non-bot comment or
+  review; same-day responses to date-only ledger entries are excluded as
+  unorderable; the `re-evaluate` report now annotates who/what/when + the action it
+  follows. (2) **Deep-review scaffolder:** `--scaffold-review <PR>` /
+  `--scaffold-eligible` pre-fill all mechanical brief fields (trust, files/LOC,
+  formal + inline review threads, linked issues, peer-PR overlap, CI-runs-the-test
+  heuristic), leaving only judgment fields as `_TODO_`. (3) **Commit & push is now a
+  mandatory sweep step (§4.7):** every change to the ledger/findings/tool/data/docs
+  is committed and pushed — the working tree is never left dirty.

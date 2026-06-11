@@ -25,8 +25,15 @@ list of PRs **awaiting our action** (a PR drops off once it's approved/merged or
 to the author). `actions.jsonl` is the machine system of record (full state + history). There
 is no `review-queue.md`.
 
-Deep reviews (Rule 4) are produced separately and recorded with
+Deep reviews (Rule 4) are produced separately — start from a pre-filled brief
+skeleton (`helpers/sweep.py --scaffold-review <PR>`, or `--scaffold-eligible` for
+the whole eligible set), fill the judgment fields, then record with
 `helpers/sweep.py --record-review <PR>`. See POLICY.md §5.
+
+**Always commit *and* push.** Every cycle, commit any changes to `actions.jsonl`,
+`review-findings.md`, `helpers/`, `data/`, or the docs and push them — the ledger
+is the system of record and must be durable, never left in a dirty working tree
+(POLICY.md §4.7).
 
 Other modes:
 ```bash

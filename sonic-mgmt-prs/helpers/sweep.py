@@ -401,7 +401,7 @@ def fetch_prs():
     for n in nums:
         d = gh_json(["pr", "view", str(n), "--repo", REPO, "--json",
                      "number,title,author,mergeable,statusCheckRollup,reviews,"
-                     "headRefOid,isDraft,body,baseRefName,updatedAt,labels"])
+                     "headRefOid,isDraft,body,baseRefName,updatedAt,labels,comments"])
         detail.append(d)
     return detail
 
@@ -696,7 +696,7 @@ def suggest_reviewers(pr):
                 tally[login] = tally.get(login, 0) + 1
     cands = []
     for login, cnt in tally.items():
-        if login == author or login.endswith("[bot]") or login in ("mssonicbld",):
+        if login == author or is_bot(login):
             continue
         a = affil_of(login)
         if is_nexthop(login, a):
@@ -712,6 +712,166 @@ def suggest_reviewers(pr):
         print(f"{cnt:>7}  {login:22} {a:18} {wa}")
     print("\nRequest a review from one of the above (gh pr edit --add-reviewer <login>) "
           "or tag them in a comment.")
+
+
+# --- Deep-review brief scaffolder (Rule 4) ------------------------------------
+# Pre-fills every mechanically-derivable brief field so a deep review starts from
+# fetched facts instead of ~6 hand-run gh queries per PR. The four JUDGMENT fields
+# (matches-description, conflict/dup read, recommendation, reviewer notes) are left
+# as TODO — those need a human/agent to read the diff. CI-runs-test is a heuristic
+# (clearly marked) the reviewer must confirm.
+
+LINKED_ISSUE_RE = re.compile(r'\b(?:fix(?:e[sd])?|close[sd]?|resolve[sd]?)\b[:\s]+#(\d+)', re.I)
+BARE_ISSUE_RE = re.compile(r'(?<![\w/])#(\d+)\b')
+TEST_FILE_RE = re.compile(r'(^|/)tests?/.*\.py$')
+# Markers in added test code that mean the VS/KVM PR gate may NOT actually run the test.
+CI_SKIP_MARKERS = [
+    ("is_vs_device", "VS early-skip (hardware-only)"),
+    ("skip_if_vs", "VS skip"),
+    ("pytest.mark.skipif", "skipif gate"),
+    ("pytest.mark.skip", "hard skip"),
+    ("@pytest.mark.skip", "hard skip"),
+    ("conditional_mark", "conditional_mark gate"),
+    ("allure", "allure/manual-only"),
+    ("pytest.mark.disable_loganalyzer", "(not a skip — note only)"),
+]
+# Topology markers the default PR gate (t0/t1) typically does NOT cover.
+CI_TOPO_MARKERS = ["t2", "dualtor", "m0", "mx", "t0-backend", "t1-backend"]
+
+
+def _linked_issues(body):
+    """(auto_close[list], mentioned[list]) issue numbers parsed from the PR body."""
+    body = body or ""
+    auto = sorted(set(LINKED_ISSUE_RE.findall(body)), key=int)
+    auto_set = set(auto)
+    mentioned = sorted({n for n in BARE_ISSUE_RE.findall(body) if n not in auto_set}, key=int)
+    return auto, mentioned
+
+
+def _ci_runs_test_heuristic(pr, files):
+    """Scan the diff's ADDED test-code lines for skip/topology markers. Returns
+    (verdict, evidence[list]). Heuristic only — the reviewer confirms against the diff."""
+    test_files = [f for f in files if TEST_FILE_RE.search(f)]
+    if not test_files:
+        return ("N-A / Review", ["no tests/*.py changed — infra/doc/fixture PR? confirm manually"])
+    out = subprocess.run(["gh", "pr", "diff", str(pr), "--repo", REPO],
+                         capture_output=True, text=True)
+    diff = out.stdout if out.returncode == 0 else ""
+    cur = None
+    hard, topo, notes = [], [], []        # hard skip / topology-gate / informational
+    for ln in diff.splitlines():
+        if ln.startswith("+++ b/"):
+            cur = ln[6:]
+            continue
+        if not ln.startswith("+") or ln.startswith("+++"):
+            continue
+        add = ln[1:]
+        for marker, why in CI_SKIP_MARKERS:
+            if marker in add:
+                (notes if "not a skip" in why else hard).append(f"{cur}: `{marker}` — {why}")
+        for t in CI_TOPO_MARKERS:
+            if re.search(rf'topology\([^)]*["\']({re.escape(t)})["\']', add):
+                topo.append(f"{cur}: topology `{t}` — confirm the PR gate runs this topology (default is t0/t1)")
+    dedup = lambda xs: list(dict.fromkeys(xs))
+    hard, topo, notes = dedup(hard), dedup(topo), dedup(notes)
+    ev = hard + topo + notes
+    if hard:
+        return ("No / Partial (RED FLAG — confirm)", ev)
+    if topo:
+        return ("Partial — topology-gated (confirm)", ev)
+    return ("Likely Yes (confirm)", [f"no skip/topology markers in added lines of {len(test_files)} test file(s)"] + notes)
+
+
+def scaffold_review(pr, peer_files=None):
+    """Print a deep-review brief skeleton with all mechanical fields pre-filled."""
+    d = gh_json(["pr", "view", str(pr), "--repo", REPO, "--json",
+                 "title,author,body,additions,deletions,files,headRefOid,reviews,"
+                 "labels,baseRefName,isDraft"]) or {}
+    title = d.get("title", "")
+    login = (d.get("author") or {}).get("login", "?")
+    affil = affil_of(login)
+    trust, _ = author_trust(login)
+    files = [f["path"] for f in (d.get("files") or [])]
+    add, dele = d.get("additions", 0), d.get("deletions", 0)
+    sha = d.get("headRefOid", "")
+    auto, mentioned = _linked_issues(d.get("body"))
+
+    # review state per author (formal reviews) + inline line-comment threads
+    rv_by = {}
+    for rv in (d.get("reviews") or []):
+        who = (rv.get("author") or {}).get("login", "?")
+        rv_by.setdefault(who, []).append(rv.get("state", "?"))
+    inline = gh_json(["api", f"repos/{REPO}/pulls/{pr}/comments", "--paginate"]) or []
+    inline_h = [c for c in inline if not is_bot((c.get("user") or {}).get("login", ""))]
+
+    verdict, evidence = _ci_runs_test_heuristic(pr, files)
+
+    # conflict/dup signal against the other PRs in this sweep (shared file paths)
+    overlap = []
+    if peer_files:
+        myset = set(files)
+        for opr, ofiles in peer_files.items():
+            if opr == pr:
+                continue
+            shared = myset & set(ofiles)
+            if shared:
+                overlap.append(f"#{opr} ({len(shared)} shared: {sorted(shared)[0]}…)")
+
+    p = print
+    p(f"\n<a id=\"pr-{pr}\"></a>")
+    p(f"\n### [PR #{pr}](https://github.com/{REPO}/pull/{pr}) — {title}")
+    p(f"- **Author / affiliation / trust:** {login} / {affil} / {trust}")
+    p(f"- **Type:** _TODO (judgment — Bug fix | Feature | New test suite | mix)_")
+    p(f"- **Complexity:** _TODO_ — {len(files)} file(s), +{add}/-{dele}"
+      + (f"; draft" if d.get("isDraft") else ""))
+    p(f"  - changed files: {files if len(files) <= 12 else files[:12] + ['…(+%d)' % (len(files)-12)]}")
+    p(f"- **Description summary:** _TODO (read body)_")
+    if rv_by:
+        p(f"- **Existing reviews:** " + "; ".join(f"{w} {'/'.join(s)}" for w, s in rv_by.items()))
+    else:
+        p(f"- **Existing reviews:** none")
+    if inline_h:
+        p(f"- **Inline threads ({len(inline_h)}) — judge each addressed vs OPEN:**")
+        for c in inline_h[:12]:
+            who = (c.get("user") or {}).get("login", "?")
+            path = c.get("path", "?"); body = " ".join((c.get("body") or "").split())[:120]
+            p(f"    - {who} @ {path}:{c.get('line') or c.get('original_line') or '?'} ({c.get('created_at','')[:10]}): {body}")
+        if len(inline_h) > 12:
+            p(f"    - …(+{len(inline_h)-12} more — see `gh api repos/{REPO}/pulls/{pr}/comments`)")
+    else:
+        p(f"- **Inline threads:** none (non-bot)")
+    p(f"- **Matches description?:** _TODO (read diff vs body)_")
+    p(f"- **Conflict likelihood:** " + ("_TODO_ — overlaps: " + ", ".join(overlap) if overlap else "_TODO_ — no file overlap with peer PRs this sweep"))
+    p(f"- **Duplication likelihood:** _TODO (none seen / suspected #…)_")
+    p(f"- **CI actually runs the test? [HEURISTIC — confirm]:** {verdict}")
+    for e in evidence:
+        p(f"    - {e}")
+    if auto or mentioned:
+        p(f"- **Linked issue(s):** " + ", ".join(
+            [f"#{n} (auto-close on merge — verify)" for n in auto]
+            + [f"#{n} (mentioned — track-only unless it's an issue)" for n in mentioned]))
+    else:
+        p(f"- **Linked issue(s):** none parsed from body")
+    p(f"- **Reviewer notes:** _TODO_")
+    p(f"- **Suggested recommendation:** _TODO (Approve | Request changes | Get another opinion | Reject)_")
+    p(f"- _head SHA: {sha} — record with_ `./sweep.py --record-review {pr} --review-detail \"<rec>\"`")
+
+
+def scaffold_eligible():
+    """Scaffold a brief for every PR the current plan flags deep_review-eligible."""
+    detail = fetch_prs()
+    ledger = load_ledger()
+    plan = classify_and_plan(detail, ledger)
+    elig = [r["pr"] for r in plan if r["action"] == "deep_review"]
+    # fetch_prs() doesn't pull file lists; fetch them just for the eligible set so
+    # the cross-PR conflict/dup signal is populated.
+    peer_files = {}
+    for pr in elig:
+        fd = gh_json(["pr", "view", str(pr), "--repo", REPO, "--json", "files"]) or {}
+        peer_files[pr] = [f["path"] for f in (fd.get("files") or [])]
+    print(f"# Deep-review scaffolds — {len(elig)} eligible PR(s): {elig}")
+    for pr in elig:
+        scaffold_review(pr, peer_files)
 
 
 COMMIT_MSG_NOTICE = (
@@ -890,18 +1050,52 @@ def latest_action(pr, ledger):
     return max(acts, key=entry_ts) if acts else None
 
 
-def responded_since(d, ts):
-    """Did the author/reviewer act after our hand-off? Proxy via updatedAt > ts.
-    Guard: if our action was *today* (ts is today's date), don't judge a response yet
-    — our own actions (comments, /azp run) bump updatedAt the same day, which would
-    look like a response. Real responses surface on a later sweep day. (Seeded ledger
-    entries are date-only, which made this a false-positive flood.)"""
+BOTS = {"mssonicbld", "azure-pipelines", "github-actions",
+        "github-advanced-security", "coderabbitai", "dependabot", "mssonicbld[bot]"}
+
+
+def is_bot(login):
+    """True for automation/self accounts that shouldn't count as a human response."""
+    if not login:
+        return True
+    return login.endswith("[bot]") or login in BOTS
+
+
+def human_response_since(d, ts):
+    """Latest genuine human response after `ts` — a non-self, non-bot issue comment
+    or review submission. Returns (login, kind, when) or None.
+
+    This replaces the old `updatedAt > ts` proxy, which counted our OWN comments,
+    the `/azp run` we posted, and the CI bot's status updates as "responses" — a
+    flood of false positives (30 flagged when only ~2 were real). We read the actual
+    timeline instead. (Known gap: an inline line-comment added *outside* a formal
+    review submission lives only in the pulls/N/comments API, not in `comments`/
+    `reviews` here; those are rare and surface on the next sweep via updatedAt drift.)"""
     if not ts:
-        return False
-    if ts[:10] >= today():
-        return False
-    upd = d.get("updatedAt", "") or ""
-    return bool(upd) and upd > ts
+        return None
+    # Legacy date-only ledger entries become a midnight sentinel via entry_ts(); we
+    # can't order a SAME-day comment against an unknown-time action, so for those we
+    # require a strictly-later day. Real (HH:MM:SS) timestamps compare exactly.
+    imprecise = ts.endswith("T00:00:00Z")
+    best = None
+    def consider(login, kind, when):
+        nonlocal best
+        if not (login and login != REVIEWER and not is_bot(login) and when):
+            return
+        after = (when[:10] > ts[:10]) if imprecise else (when > ts)
+        if after and (best is None or when > best[2]):
+            best = (login, kind, when)
+    for c in (d.get("comments") or []):
+        consider((c.get("author") or {}).get("login", ""), "comment", c.get("createdAt", "") or "")
+    for rv in (d.get("reviews") or []):
+        consider((rv.get("author") or {}).get("login", ""),
+                 "review:" + (rv.get("state") or "?"), rv.get("submittedAt", "") or "")
+    return best
+
+
+def responded_since(d, ts):
+    """Bool wrapper: did a non-self, non-bot human respond after our hand-off `ts`?"""
+    return human_response_since(d, ts) is not None
 
 
 def needs_our_action(d, ledger):
@@ -974,8 +1168,18 @@ def main():
                     help="list PRs that currently belong in review-findings.md (awaiting our action)")
     ap.add_argument("--branch-eval", type=int, metavar="PR",
                     help="list a PR's backport branch requests + the Approved/Reject labels to apply (Rule 8)")
+    ap.add_argument("--scaffold-review", type=int, metavar="PR",
+                    help="print a deep-review brief skeleton for PR with all mechanical fields pre-filled (Rule 4)")
+    ap.add_argument("--scaffold-eligible", action="store_true",
+                    help="scaffold a brief for every deep_review-eligible PR in the current plan")
     args = ap.parse_args()
 
+    if args.scaffold_eligible:
+        scaffold_eligible()
+        return
+    if args.scaffold_review:
+        scaffold_review(args.scaffold_review)
+        return
     if args.branch_eval:
         d = gh_json(["pr", "view", str(args.branch_eval), "--repo", REPO, "--json", "labels,baseRefName"]) or {}
         reqs = branch_requests(d)
@@ -1019,9 +1223,17 @@ def main():
         report_issue_linkage()
         return
     if args.record_review:
-        append_ledger({"pr": args.record_review, "action": "deep_review",
-                       "date": today(), "detail": args.review_detail})
-        print(f"recorded deep_review for #{args.record_review}")
+        # Capture the head SHA so re-review eligibility is per-commit: a later push
+        # (new SHA) correctly re-flags the PR for deep review. Without this, a
+        # SHA-less entry matches ANY sha and would suppress all future re-reviews.
+        hd = gh_json(["pr", "view", str(args.record_review), "--repo", REPO,
+                      "--json", "headRefOid"]) or {}
+        entry = {"pr": args.record_review, "action": "deep_review",
+                 "date": today(), "detail": args.review_detail}
+        if hd.get("headRefOid"):
+            entry["sha"] = hd["headRefOid"]
+        append_ledger(entry)
+        print(f"recorded deep_review for #{args.record_review} (sha {entry.get('sha','?')[:12]})")
         return
 
     ledger = load_ledger()
@@ -1049,12 +1261,22 @@ def main():
     print("\ntickler reminders (2-week, still-waiting hand-offs):")
     tickler_pass(detail, ledger, args.apply)
 
-    # Re-evaluation: PRs with new activity since our hand-off are back in our court.
-    reeval = [d["number"] for d in detail
-              if (la := latest_action(d["number"], ledger)) and la["action"] in HANDOFF
-              and responded_since(d, entry_ts(la))]
+    # Re-evaluation: PRs where a genuine human (non-self, non-bot) responded after
+    # our hand-off are back in our court. Annotated with who/what/when + our last
+    # action, so the human knows WHY each is flagged (no bare number dump, no
+    # updatedAt false-positive flood).
+    reeval = []
+    for d in detail:
+        la = latest_action(d["number"], ledger)
+        if not la or la["action"] not in HANDOFF:
+            continue
+        resp = human_response_since(d, entry_ts(la))
+        if resp:
+            reeval.append((d["number"], la["action"], resp))
     if reeval:
-        print(f"\nre-evaluate (author/reviewer responded since our action): {sorted(reeval)}")
+        print("\nre-evaluate (genuine human response since our hand-off):")
+        for pr, last_act, (who, kind, when) in sorted(reeval):
+            print(f"  #{pr:5} (after our {last_act}) — {who} {kind} @ {when[:16]}")
 
     # Rule 8 'approve => merge': any PR we've approved that is STILL OPEN is a pending
     # merge (a held/missed merge). Attempt it every sweep so we never miss one.
