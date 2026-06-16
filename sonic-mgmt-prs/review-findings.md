@@ -2,13 +2,15 @@
 
 **PRs awaiting our action**, sorted by recommendation — each links to its full brief (click → read → back → next). A PR drops off this doc once it's **approved/merged** or **handed back to the author** (changes/info/evidence requested, conflicting, COI-waiting); full state + history live in `actions.jsonl` + git. Recommendations fold in: does the diff match the description, complexity, **author trust** (§8.1), and **whether CI actually runs the test** (a green check on a skipped test proves nothing — see CI column). _Decision support; approval is the human reviewer's call._
 
-**Tally:** Approve: 4 · Request changes: 2 · Get another opinion: 2 · Blocked (COI): 2
-_(Second sweep 2026-06-11: yesterday's 8 `/azp run` kicks resolved — 7 went green → deep-reviewed below; #24802 went red → ci_fail_notify. #20841 ci_fail_notify + commit-msg notice posted. Re-eval responses: #24902 author + anders-nexthop audit (below); #24367 lipxu and #24913 echuawu responded — off-doc, author/reviewer ball.)_
+**Tally:** Approve: 6 · Request changes: 2 · Get another opinion: 2 · Hold (your call): 1 · Blocked (COI): 1
+_(Third sweep 2026-06-16: re-evaluation cleared three handed-off PRs — **#24975** (our change-request satisfied + nhe-NV approved) and **#25000** (passing-run evidence + yaopingz approved) are now **ready for your approve+merge**; **#24829**'s evidence is a pdb dump with no independent approval → **held for your call**. #25012 merged upstream (off-doc). Mechanical: 5 `ci_fail_notify` posted (Rule 3/5); 6 already-notified failing PRs were correctly **suppressed** after a tool idempotency fix (re-notify now keys off the failing-run timestamp per POLICY §3, not a wall-clock cooldown). Author/reviewer-ball (off-doc): #24247, #24367, #20456, #24913, #24802, #21144, #24902-followups.)_
 
 ## Recommendations
 
 | PR | Title | Author / Trust | CI runs test? | ➡ Recommendation |
 |----|-------|----------------|---------------|------------------|
+| [#24975](#pr-24975) | Fix the NTP polling step in deploy-mg playbook | congh-nvidia / Expert | Indirect (deploy) | **Approve — ready** — our CR satisfied (poll-for-readiness) + nhe-NV approved; awaiting your approve+merge |
+| [#25000](#pr-25000) | Fix test_srv6_vlan_forwarding when no ipv6 mgmt | ytzur1 / High | No (srv6 vs-skip) | **Approve — ready** — passing-run evidence + yaopingz approved; awaiting your approve+merge |
 | [#24217](#pr-24217) | Add xfail for HeadroomPool probe on SPC1/SPC3 | XuChen-MSFT / Expert | N-A (mark yaml) | **Approve** — issue-gated xfail (#24558 open), narrowly scoped |
 | [#24091](#pr-24091) | Add confed config to topo_t2_single_node_max_64p | YatishSVC / High | N-A (topo data) | **Approve** — confed config consistent across both files; threads resolved |
 | [#21429](#pr-21429) | Add mgmtd set-src regression coverage | Bojun-Feng / Low | Yes (t0/t1/t2) | **Approve** — all 7 reviewer points resolved; refresh stale description |
@@ -17,14 +19,46 @@ _(Second sweep 2026-06-11: yesterday's 8 `/azp run` kicks resolved — 7 went gr
 | [#17940](#pr-17940) | Add generate_hosts script | Pterosaur / Expert | N-A (script) | **Request changes** — wangxin CR + 16 open inline issues, 3mo stale |
 | [#24902](#pr-24902) | Handle pytest.fail.Exception in wait_until | wrideout-arista / High | Partial (shared helper) | **Get another opinion** — anders found 4 silent-no-op sites; awaiting @wangxin/@lolyu |
 | [#23283](#pr-23283) | Prevent cascading qos_sai failures after fixture error | darius-nexthop / Medium | Partial (off-gate) | **Get another opinion (COI)** — open ZhaohuiS concern; NextHop can't self-approve |
+| [#24829](#pr-24829) | Fix: add port name for acl interface parsing | ytzur1 / High | No (alias==name on gate) | **Hold (your call)** — evidence is a pdb dump, no independent approval |
 | [#23346](#pr-23346) | SONiC BMC Redfish API and D-Bus test plan | chinmoy-nexthop / Unproven | N-A (doc) | **Blocked (COI)** — NextHop test plan; needs non-NextHop approval |
-| [#25012](#pr-25012) | Fixing PMON status test failures | caleb-nexthop / Medium | No (daemon vs-skip) | **Blocked (COI)** — NextHop; needs cross-company approval + hw pass |
 
 ---
 
 ## Briefs
 
 _Ordered by recommendation, same as above._
+
+<a id="pr-24975"></a>
+
+### [PR #24975](https://github.com/sonic-net/sonic-mgmt/pull/24975) — Fix the NTP polling step in deploy-mg playbook
+- **Author / affiliation / trust:** congh-nvidia (Cong Hou) / NVIDIA / Expert (merged PRs=100, top-company rank #2)
+- **➡ Recommendation:** **Approve — ready (re-eval cleared)** — our 2026-06-10 change-request (the added `pause: seconds: 3` was a racy fixed sleep) is **fully addressed**: congh replaced it with a readiness-gated retry on the burst itself (`chronyc burst 4/4` with `until: chrony_burst_result.rc == 0`, `retries: 3`, `delay: 2`, `changed_when: false`) — exactly the poll-don't-sleep fix we proposed (we suggested 5 retries; 3 is acceptable). **nhe-NV (NVIDIA) independently APPROVED (06-13).** CI green, MERGEABLE. Awaiting **your** approve+merge. Backport `Request for 202605` is valid (deploy-time NTP reliability fix, appropriate for a stable branch) → flip to `Approved for 202605 branch` on merge.
+- **Type:** Bug fix (test-infra reliability — ansible deploy-mg NTP step).
+- **Complexity:** Low — 1 file, +5/-0, `ansible/config_sonic_basedon_testbed.yml`; adds retry/until directives to the existing `chronyc burst` task. No blast radius beyond the deploy-mg NTP step.
+- **Description summary:** The NTP polling step could race chronyd not yet being ready; the fix makes the rapid-polling `chronyc burst` resilient by retrying until it succeeds instead of failing or sleeping a fixed interval.
+- **Existing reviews/comments:** bhouse-nexthop changes-requested (06-10, racy fixed sleep); congh-nvidia updated, "I have update the change with 3 retries" (06-12); **nhe-NV APPROVED (06-13)**.
+- **Matches description?:** Yes — diff is exactly the readiness-gated burst retry.
+- **CI actually runs the test?:** Indirect — not a pytest; the `chronyc burst` task runs during testbed deploy-mg (NTP setup). Green CI means the deploy path ran; the fix is judged on the readiness-poll logic (no magic-constant sleep).
+- **Linked issue(s):** none (no `Fixes` keyword).
+- **Reviewer notes:** Adopts the recommended pattern (poll the real readiness condition, tolerate slow platforms). NVIDIA author + independent NVIDIA maintainer approval → not a COI concern (author is not NextHop).
+
+[↑ back to recommendations](#deep-review-findings--sonic-netsonic-mgmt)
+
+<a id="pr-25000"></a>
+
+### [PR #25000](https://github.com/sonic-net/sonic-mgmt/pull/25000) — Fix test_srv6_vlan_forwarding when no ipv6 mgmt for ptf docker
+- **Author / affiliation / trust:** ytzur1 / NVIDIA / High (merged PRs=22, top-company rank #2)
+- **➡ Recommendation:** **Approve — ready (re-eval cleared)** — our 2026-06-10 evidence-request (CI doesn't exercise this — `conditional_mark` skips `test_srv6_vlan_forwarding` on any ASIC other than mellanox/broadcom, and the PR-gate is `asic_type=vs`) is **satisfied**: ytzur1 posted a passing run for all four variants (`test_srv6_uN_forwarding_towards_vlan[True/False]`, `test_srv6_uN_no_vlan_flooding[True/False]` → passed) on a real (Arista) testbed, and **yaopingz (Microsoft) independently APPROVED (06-15)**, explaining the mechanism (forcing `1000::1` as the packet `ipv6_src` keeps it out of the expected-packet filter so both cases pass; cites precedent #18609). CI green, MERGEABLE. Awaiting **your** approve+merge. Backport `Request for 202605` valid (test fix) → `Approved for 202605 branch` on merge.
+- **Type:** Bug fix (test correctness on testbeds that have ptf ipv6 mgmt).
+- **Complexity:** Low — 1 file, +6/-4, `tests/.../srv6/test_srv6_vlan_forwarding.py`; uses `ptfhost.mgmt_ipv6` when available and forces a fixed `ipv6_src`.
+- **Description summary:** Fixes `test_srv6_vlan_forwarding` to use `ptf_mgmt_ipv6` when present instead of assuming there is none.
+- **Existing reviews/comments:** bhouse-nexthop changes-requested (06-10, CI doesn't run it — share a pass); ytzur1 "added logs of passed tests" (06-14, all 4 variants passed); **yaopingz APPROVED (06-15)** with a non-blocking architectural question (should the testbed SRv6 config be fixed instead of patching test code — they approved anyway, citing #18609).
+- **Matches description?:** Yes.
+- **CI actually runs the test?:** **No** — `conditional_mark` skips it on the `vs` PR-gate ASIC; confidence comes from the author's passing run on real hardware + yaopingz's independent approval/explanation.
+- **Linked issue(s):** none (no `Fixes` keyword).
+- **Reviewer notes:** Evidence + independent Microsoft approval cover the CI gap. yaopingz's "fix testbed config vs patch test code everywhere" point is a non-blocking design preference (they approved). NVIDIA author → no COI gate.
+
+[↑ back to recommendations](#deep-review-findings--sonic-netsonic-mgmt)
 
 <a id="pr-24217"></a>
 
@@ -192,6 +226,22 @@ _Ordered by recommendation, same as above._
 
 [↑ back to recommendations](#deep-review-findings--sonic-netsonic-mgmt)
 
+<a id="pr-24829"></a>
+
+### [PR #24829](https://github.com/sonic-net/sonic-mgmt/pull/24829) — Fix: add port name for acl interface parsing
+- **Author / affiliation / trust:** ytzur1 / NVIDIA / High (merged PRs=22, top-company rank #2)
+- **➡ Recommendation:** **Hold — your call** — re-eval after our 2026-06-10 evidence-request. The change is additive and safe (a last-resort `elif member in ports` fallback after the existing branches), and ytzur1's response *literally* satisfies what we asked for (`mg_facts['minigraph_acls']` populated on a Mellanox-SN6600_LD-P128C2, where the bug lives). **But** the "evidence" is a pdb/debugger inspection dump, not a clean passing test run, and there is **no independent maintainer approval** — the only review on the PR is our own CHANGES_REQUESTED. Per your policy I'm not approving/merging on our review alone: flagging for your decision — either accept the pdb evidence as sufficient (additive/safe change), or ask ytzur1 for an actual passing run before approving.
+- **Type:** Bug fix (ACL interface / minigraph_acls parsing on aliased-port HWSKUs).
+- **Complexity:** Low — 1 file, +2/-0; adds a fallback branch to the ACL interface parsing.
+- **Description summary:** Adds port-name handling so ACL interface parsing also matches when a member is a port name (not an alias). References #22166.
+- **Existing reviews/comments:** bhouse-nexthop CHANGES_REQUESTED (06-10, evidence_request — CI doesn't exercise the new path since the KVM-gate HWSKU has alias==name); ytzur1 posted pdb output (06-14) showing `minigraph_acls` populated (DataAcl: Ethernet0…Ethernet200) on Mellanox-SN6600_LD-P128C2. No other reviewer.
+- **Matches description?:** Yes — the 2-line fallback matches the described intent.
+- **CI actually runs the test?:** **No** — on the KVM PR-gate the HWSKU has alias==name, so the existing `elif member in port_alias_to_name_map` branch already matches and the new `elif member in ports` fallback is never reached; it only fires on hardware where alias != name (e.g. `etp*` aliases) — exactly the case the bug affects.
+- **Linked issue(s):** #22166 (referenced in body).
+- **Reviewer notes:** Code is a safe additive fallback (our original assessment stands). The open question is purely evidentiary/process: pdb inspection vs a clean passing run, and no second reviewer — so a merge would rest on our review alone, which is why it's held for your decision. NVIDIA author → no COI gate.
+
+[↑ back to recommendations](#deep-review-findings--sonic-netsonic-mgmt)
+
 <a id="pr-23346"></a>
 
 ### [PR #23346](https://github.com/sonic-net/sonic-mgmt/pull/23346) — SONiC BMC Redfish API and D-Bus test plan
@@ -208,23 +258,5 @@ _Ordered by recommendation, same as above._
 - **Duplication likelihood:** none seen — first Redfish/BMC test plan in the repo.
 - **Linked issue(s):** none closeable — `Fixes #` blank; referenced sonic-net/SONiC#2043, sonic-redfish#1/#2 are all **PRs** (track-only). Dependent HLDs reportedly not yet merged upstream — confirm before acting.
 - **Reviewer notes:** Defer to NextHop on BMC/Aspeed/D-Bus endpoint facts. Reconcile the 29→34 / 11→12 count; the documented `tests/redfish/` tree is a future follow-up.
-
-[↑ back to recommendations](#deep-review-findings--sonic-netsonic-mgmt)
-
-<a id="pr-25012"></a>
-
-### [PR #25012](https://github.com/sonic-net/sonic-mgmt/pull/25012) — Fixing PMON status test failures
-- **➡ Recommendation:** Blocked (COI) — NextHop-authored; needs cross-company approval AND a hardware pass
-- **Author / affiliation:** caleb-nexthop / NextHop
-- **Trust:** Medium (NextHop)
-- **CI runs the test?:** No (daemon vs-skip)
-- **Type:** Bug fix
-- **Complexity:** Medium — 7 files, +35/-55, localized to `tests/platform_tests/daemon/`. New module-scoped `conftest.py` (shared fixtures) consumed by 6 daemon modules.
-- **Description summary:** PMON term/kill tests fail under `run_optimal` because `auto_restart=enabled` restarts the container and resets PIDs, breaking `post_pid > pre_pid`. Adds a shared fixture to disable pmon container autorestart (restored on teardown), consolidates per-module `check_daemon_status`, and swaps a `time.sleep(10)` for `wait_until(...)` in test_pcied.
-- **Existing reviews/comments:** github-advanced-security (automated, empty body); liamkearney-msft (APPROVED). Author asked if anything blocks merge.
-- **Matches description?:** Yes — new conftest with both fixtures, 6 modules drop duplicated fixture, per-module host overrides added, `time.sleep(10)`→`wait_until(120,10,0,...)`. Minor doc/code drift (desc says `wait_until(50,...)`).
-- **Conflict likelihood:** Low — file-isolated.
-- **Duplication likelihood:** none seen (references #24384 as the wait_until precedent).
-- **Reviewer notes:** Clean, well-scoped. Confirm the module-scoped autorestart teardown ordering is fine for modules that previously had no autorestart handling. Note timeout discrepancy (50 vs 120).
 
 [↑ back to recommendations](#deep-review-findings--sonic-netsonic-mgmt)

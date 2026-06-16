@@ -35,7 +35,6 @@ LEDGER = os.path.join(ROOT, "actions.jsonl")
 
 STALE_DAYS = 14
 ESCALATE_DAYS = 14
-NOTIFY_COOLDOWN_DAYS = 3   # don't re-notify the same failing PR within this window
 
 PING_TMPL = ("Hi @{author}, this PR currently has merge conflicts with the target "
              "branch. Could you confirm whether it's still relevant/active? If so, "
@@ -388,6 +387,21 @@ def ci_state(checks):
     return ("none", last)
 
 
+def last_fail_ts(checks):
+    """completedAt of the most recent FAILING check, or '' — the 'episode' key for
+    ci_fail_notify idempotency (POLICY §3: re-notify only on a *newer* failing run)."""
+    last = ""
+    for c in checks or []:
+        st = c.get("state"); concl = c.get("conclusion")
+        failed = (st in ("FAILURE", "ERROR")) or \
+                 (not st and concl in ("FAILURE", "TIMED_OUT", "ACTION_REQUIRED", "STARTUP_FAILURE"))
+        if failed:
+            comp = c.get("completedAt") or c.get("startedAt") or ""
+            if comp > last:
+                last = comp
+    return last
+
+
 def fetch_prs():
     prs = gh_json(["pr", "list", "--repo", REPO, "--search",
                    f"review-requested:{REVIEWER}", "--state", "open",
@@ -457,8 +471,12 @@ def classify_and_plan(detail, ledger):
                 row["action"] = "conflict_ping"; row["reason"] = "Rule 1: new conflict"
         elif state == "FAIL":
             azp_ts = last_action_ts(ledger, pr, "azp_run")
-            notify_date = last_action_date(ledger, pr, "ci_fail_notify")
-            in_cooldown = notify_date and days_since(notify_date) < NOTIFY_COOLDOWN_DAYS
+            notify_ts = last_action_ts(ledger, pr, "ci_fail_notify")
+            fail_ts = last_fail_ts(d.get("statusCheckRollup")) or last or ""
+            # Episode idempotency (POLICY §3): re-notify only when a *newer* failing run
+            # appeared AFTER our last notice. Same failing run we already flagged -> stay
+            # silent no matter how many days pass — this is what prevents repeat nudges.
+            already_notified = notify_ts and fail_ts <= notify_ts
             cmp_last = last or ""
             recent = days_since(last) <= STALE_DAYS          # failing run ran recently, on current code
             if azp_ts and azp_ts > cmp_last:
@@ -468,8 +486,9 @@ def classify_and_plan(detail, ledger):
                 # CI ran recently on the current code and failed -> re-running won't help;
                 # ask the author to fix. (Covers Rule 5 'failed after our /azp run' AND a
                 # fresh failure we didn't trigger, e.g. a just-rebased PR.)
-                if in_cooldown:
-                    row["action"] = "none"; row["reason"] = "CI failing (recent) — notified within cooldown"
+                if already_notified:
+                    row["action"] = "none"
+                    row["reason"] = f"CI failing (recent) — already notified this run ({(notify_ts or '')[:10]}); no newer failing run"
                 else:
                     row["action"] = "ci_fail_notify"
                     row["notify_kind"] = "post_azp" if azp_ts else "fresh"
