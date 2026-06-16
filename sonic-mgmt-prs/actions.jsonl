@@ -127,3 +127,5 @@
 {"pr": 21429, "action": "issue_close", "date": "2026-06-16", "detail": "sonic-net/sonic-buildimage#24694", "ts": "2026-06-16T21:25:01Z"}
 {"pr": 23542, "action": "merge", "date": "2026-06-16", "detail": "squash: [ACL] Fix missing upstream ports in ACL table for topologies with a mix of LAG and non-LAG upstream ports", "ts": "2026-06-16T21:25:06Z"}
 {"pr": 24217, "action": "merge", "date": "2026-06-16", "detail": "squash: [Probe] Add xfail for HeadroomPool probe test on SPC1 and SPC3", "ts": "2026-06-16T21:28:53Z"}
+{"pr": 24591, "action": "changes_requested", "date": "2026-06-16", "detail": "formal request-changes: empty except swallow in _wait_sonic_acl_ready (CodeQL+yxieca); CONFIG_DB-vs-ASIC note", "sha": "93ed17ef", "ts": "2026-06-16T21:35:14Z"}
+{"pr": 17940, "action": "changes_requested", "date": "2026-06-16", "detail": "formal request-changes: 14 items (parsing/KeyError/isatty/atomic-write/IP-validation/signoff/unit-tests); wangxin CR + 16 inline still open, 3mo stale", "sha": "74866cda", "ts": "2026-06-16T21:35:14Z"}
