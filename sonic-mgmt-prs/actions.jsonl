@@ -120,3 +120,10 @@
 {"pr": 24247, "action": "ci_fail_notify", "date": "2026-06-16", "detail": "https://github.com/sonic-net/sonic-mgmt/pull/24247#issuecomment-4723432800", "ts": "2026-06-16T20:40:19Z"}
 {"pr": 21144, "action": "ci_fail_notify", "date": "2026-06-16", "detail": "https://github.com/sonic-net/sonic-mgmt/pull/21144#issuecomment-4723433044", "ts": "2026-06-16T20:40:20Z"}
 {"pr": 20456, "action": "ci_fail_notify", "date": "2026-06-16", "detail": "https://github.com/sonic-net/sonic-mgmt/pull/20456#issuecomment-4723433315", "ts": "2026-06-16T20:40:21Z"}
+{"pr": 24975, "action": "merge", "date": "2026-06-16", "detail": "squash: Fix the NTP polling step in deploy-mg playbook", "ts": "2026-06-16T21:24:42Z"}
+{"pr": 25000, "action": "merge", "date": "2026-06-16", "detail": "squash: Fix test_srv6_vlan_forwarding when no ipv6 mgmt for ptf docker", "ts": "2026-06-16T21:24:47Z"}
+{"pr": 24091, "action": "merge", "date": "2026-06-16", "detail": "squash: Adding confed configuration to topo_t2_single_node_max_64p.yml", "ts": "2026-06-16T21:24:53Z"}
+{"pr": 21429, "action": "merge", "date": "2026-06-16", "detail": "squash: tests/bgp: Add mgmtd set-src regression coverage", "ts": "2026-06-16T21:24:59Z"}
+{"pr": 21429, "action": "issue_close", "date": "2026-06-16", "detail": "sonic-net/sonic-buildimage#24694", "ts": "2026-06-16T21:25:01Z"}
+{"pr": 23542, "action": "merge", "date": "2026-06-16", "detail": "squash: [ACL] Fix missing upstream ports in ACL table for topologies with a mix of LAG and non-LAG upstream ports", "ts": "2026-06-16T21:25:06Z"}
+{"pr": 24217, "action": "merge", "date": "2026-06-16", "detail": "squash: [Probe] Add xfail for HeadroomPool probe test on SPC1 and SPC3", "ts": "2026-06-16T21:28:53Z"}

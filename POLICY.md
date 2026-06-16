@@ -372,7 +372,9 @@ elif CI == PENDING:                  -> no-op (a run is in flight; wait for next
 
 ### Rule 6 — Issue linkage & manual close on merge
 We track every issue a PR references so that, **if/when we approve and merge the
-PR, any linked issue that GitHub will not auto-close gets closed manually.**
+PR, any issue the PR explicitly *fixes* (closing keyword) that GitHub will not
+auto-close gets closed manually.** Issues merely *mentioned* (no closing keyword)
+are tracked but never closed.
 
 - **Detection (every sweep):** parse the PR body (and title) for issue
   references — `#N`, `owner/repo#N`, and full `…/issues/N` URLs — and note
@@ -381,17 +383,26 @@ PR, any linked issue that GitHub will not auto-close gets closed manually.**
 - **Resolve each reference's type/state via the API** — a bare `#N` is often a
   reference to *another PR* or a "based-on" note, **not** an issue this PR
   fixes. Only `type == issue` references are close candidates; ignore PR refs.
+- **The closing keyword is the author's statement of intent — and the ONLY license
+  to close.** We close an issue on merge **only** when the PR body/title explicitly
+  says it *fixes/closes/resolves* that issue. A reference **without** a closing
+  keyword is a plain mention — a gating issue (an xfail/skip gated on the issue
+  staying **open**), a "related:" pointer, "based on", history — and must **never**
+  be closed. (This bit us 2026-06-16: closing the no-keyword `#24558` on merge
+  deactivated the very xfail the PR added. Absence of a keyword = do not touch.)
 - **Classify each linked issue:**
   | Case | GitHub auto-closes on merge? | Our action on merge |
   |------|------------------------------|---------------------|
   | Same-repo issue **+ closing keyword**, merged to default branch | **Yes** | none (verify it closed) |
-  | Same-repo issue, **no closing keyword** | No | **manual close** |
-  | **Cross-repo** issue (keyword or not) | **No** (GitHub never auto-closes across repos) | **manual close** |
+  | Same-repo issue **+ closing keyword**, merged to a **non-default** branch | No | **manual close** |
+  | **Cross-repo** issue **+ closing keyword** | **No** (GitHub never auto-closes across repos) | **manual close** |
+  | Issue referenced with **no closing keyword** (same- or cross-repo) | No | **none (track only — NEVER close)** |
   | Reference is a PR, or a vague "related to" | n/a | none (track only) |
-- **On merge:** for each close candidate, `gh issue close <ref> -c "Resolved by
-  <repo>#<pr> (merged)."` and record an `issue_close` ledger entry. Never close
-  an issue before the PR is actually merged; never close one GitHub already
-  auto-closed.
+- **On merge:** for each close candidate (keyword-fixed issue that GitHub won't
+  auto-close), `gh issue close <ref> -c "Resolved by <repo>#<pr> (merged)."` and
+  record an `issue_close` ledger entry. Never close an issue before the PR is
+  actually merged; never close one GitHub already auto-closed; **never close one the
+  PR didn't claim to fix.**
 - **Caveat:** auto-close only fires when the PR merges to the **default branch**.
   A PR merged to a release branch (e.g. `202xxx`) will **not** auto-close even a
   same-repo keyword issue → treat as manual close.
@@ -795,4 +806,12 @@ of our actions it follows**, so the re-evaluation is actionable at a glance.
   **`ci_fail_notify` idempotency fix (POLICY §3 compliance):** re-notify now keys off
   the latest *failing-run* timestamp (`last_fail_ts`) instead of a 3-day wall-clock
   cooldown, which had re-nudged authors about the **same** failing run once 3 days
-  passed. Removed the unused `NOTIFY_COOLDOWN_DAYS`.
+  passed. Removed the unused `NOTIFY_COOLDOWN_DAYS`. (3) **Rule 6 close-on-merge
+  bug (policy + tool):** the classification table said a same-repo reference with
+  **no closing keyword** is a "manual close," and cross-repo "(keyword or not)" — so
+  merging closed issues the PR never claimed to fix. On #24217 this closed the
+  gating issue `#24558` (+ tracking `#24215`), deactivating the just-merged xfail.
+  Fixed: the **closing keyword is the only license to close** — no-keyword mentions
+  are track-only and never closed; only keyword-fixed issues GitHub won't auto-close
+  (cross-repo, or non-default branch) are manual-close candidates. Reopened
+  #24558/#24215 and scrubbed the 5 spurious `issue_close` ledger entries.

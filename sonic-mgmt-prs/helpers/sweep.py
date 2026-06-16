@@ -164,10 +164,18 @@ def close_candidates(refs, merged_to_default=True):
             notes.append(f"{tag} ({typ})")        # PR ref or missing -> track only
             continue
         same = (repo == REPO)
-        if same and kw and merged_to_default:
-            autos.append(tag)                       # GitHub will auto-close
+        if not kw:
+            # No closing keyword -> a plain mention / tracking reference. NEVER close it.
+            # This is the gating-issue / track-only case (e.g. an xfail gated on the
+            # issue staying OPEN, or a "related:" pointer). Closing these on merge was a
+            # bug that deactivated a just-merged xfail (2026-06-16: #24558/#24215).
+            notes.append(f"{tag} [{state}] (mention — track-only, NOT closed)")
+        elif same and merged_to_default:
+            autos.append(tag)                       # closing keyword + default branch -> GitHub auto-closes
         else:
-            reason = "cross-repo" if not same else ("no keyword" if not kw else "non-default branch")
+            # Closing keyword present, but GitHub won't auto-close on this merge
+            # (cross-repo, or merged to a non-default branch) -> manual close candidate.
+            reason = "cross-repo" if not same else "non-default branch"
             cands.append(f"{tag} [{state}] ({reason})")
     return cands, autos, notes
 
