@@ -41,7 +41,7 @@ python3 helpers/sweep.py --issues            # linked-issue / close-on-merge rep
 python3 helpers/sweep.py --commits           # commit-message hygiene report (Rule 9)
 python3 helpers/sweep.py --suggest-reviewers <PR>  # cross-company reviewer candidates for a NextHop PR (Rule 8)
 python3 helpers/sweep.py --merge <PR>        # dry-run squash/rebase plan + message (Rule 8)
-python3 helpers/sweep.py --merge <PR> --apply     # execute the merge (after human approval)
+python3 helpers/sweep.py --merge <PR> --apply     # approve+merge — ONLY after a human explicitly tells you to approve this PR (Rule 8); the agent never self-approves
 python3 helpers/sweep.py --close-issues <PR> --apply  # manual issue close after merge (Rule 6)
 ```
 

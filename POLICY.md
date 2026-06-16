@@ -19,8 +19,14 @@ and helpers live under that repo's subdirectory (e.g. `sonic-mgmt-prs/`).
 - **Goal:** keep the queue moving — get stuck PRs unstuck (conflicts, stale
   CI), surface failures to authors, and deep-review the PRs that are actually
   ready, while never spamming authors with repeated identical nudges.
-- **Boundaries:** we do **not** approve/merge PRs automatically. Deep-review
-  briefs are decision support for the human reviewer. Approvals are human.
+- **Boundaries:** the agent **never decides to approve or merge a PR on its own.**
+  Deep-review briefs and `review-findings.md` recommendations are decision support
+  for the human reviewer — including an "Approve — ready" recommendation, which is a
+  suggestion, not an action. A human must explicitly instruct each approval; the agent
+  then approves **and** merges as one step (Rule 8). Each cycle the agent's job is to
+  refresh the findings doc + ledger, commit, push, and stop. (The mechanical hygiene
+  nudges — conflict pings, `/azp run`, CI-fail and commit-message notices — stay
+  autonomous; they surface state and never render a positive verdict.)
 
 ---
 
@@ -442,21 +448,38 @@ future readers can understand what changed.
   next scan re-catches it.
 
 ### Rule 8 — Merge & squash procedure
-**Approve ⇒ merge — they are one step. Whenever we approve a PR, we merge it.**
-Never approve-and-leave; an approval we didn't merge is a bug. The **only** thing
-that stops the merge is the cross-company COI gate: a **NextHop-authored PR with no
-approval from a different company** must not be merged (nor approved-to-completion)
-— it stays **Blocked (COI)** until a non-NextHop reviewer approves. A NextHop PR
-that **does** have a cross-company approval is merged like any other. (Everything
-else — CI not running the test, etc. — is decided at *approval* time; once approved,
-it merges.)
 
-Once a PR is genuinely ready, the agent performs the merge as part of approving,
-applying these rules.
+**The agent NEVER decides to approve a PR on its own. A human must explicitly tell
+the agent to approve a specific PR.** The agent's deliverable each cycle is the
+updated `review-findings.md` (recommendations) + the ledger — committed and pushed —
+and then it **stops**. An "Approve" / "Approve — ready" recommendation in that doc is
+**decision support, not an instruction to act**: it tells the human reviewer the PR
+looks ready, so they can read it and decide. No matter how ready a PR looks (our
+change-request satisfied, an independent maintainer already approved, CI green), the
+agent does **not** post the approval until a human says "approve #NNNN." This is the
+single most important boundary in this policy — do not cross it.
+
+**Approve ⇒ merge — they are one step.** This governs what happens *once a human has
+told us to approve* a PR: we don't merely file the APPROVE review and walk away — we
+approve **and** merge it as one action (preconditions permitting). Never
+approve-and-leave; a human-directed approval we didn't merge is a bug. The merge is
+still blocked by the cross-company COI gate: a **NextHop-authored PR with no approval
+from a different company** must not be merged (nor approved-to-completion) — it stays
+**Blocked (COI)** until a non-NextHop reviewer approves. A NextHop PR that **does**
+have a cross-company approval merges like any other. (Everything else — CI not running
+the test, etc. — is weighed by the human when they decide to approve; once they
+instruct it, it merges.)
+
+So: **the human decides to approve; the agent then executes approval + merge together**,
+applying the rules below. (The mechanical hygiene actions — `conflict_ping`, `azp_run`,
+`ci_fail_notify`, commit-message and title/description fixes — remain autonomous; they
+only nudge authors and surface state, they never render a positive verdict.)
 
 - **Preconditions (ALL required before the agent merges):**
-  1. **Human approval** — `reviewDecision == APPROVED` from a human maintainer
-     (not a bot, not us auto-approving). Approval is still a human decision.
+  1. **Human-directed approval** — a human has explicitly told us to approve this
+     PR (see the top of this rule), and `reviewDecision == APPROVED` (not a bot, and
+     never the agent self-deciding). The agent only posts the APPROVE review on that
+     instruction; approval is always a human decision.
   2. CI green (latest = PASS), `mergeable == MERGEABLE`, not a draft.
   3. **No open `misleading_flag`** and no unresolved blocking review on the PR
      (a misleading/unclear description means it isn't reviewable → don't merge).
@@ -760,3 +783,16 @@ of our actions it follows**, so the re-evaluation is actionable at a glance.
   heuristic), leaving only judgment fields as `_TODO_`. (3) **Commit & push is now a
   mandatory sweep step (§4.7):** every change to the ledger/findings/tool/data/docs
   is committed and pushed — the working tree is never left dirty.
+- **2026-06-16** — third sweep + two clarifications. (1) **Approval is human-initiated
+  (Rule 8 + §1 Boundaries rewritten):** the agent NEVER decides to approve/merge on its
+  own, however ready a PR looks. "Approve ⇒ merge — one step" was being misread as
+  "the agent may approve, and if it does it also merges"; its actual meaning is *once a
+  **human** instructs an approval, execute approval **and** merge together (never
+  approve-and-leave)*. The agent's per-cycle deliverable is `review-findings.md` +
+  ledger (commit/push), then stop; the human reads it and explicitly says which PRs to
+  approve. Mechanical hygiene nudges (conflict ping, `/azp run`, CI-fail / commit-msg
+  notices) stay autonomous — they surface state, never a positive verdict. (2)
+  **`ci_fail_notify` idempotency fix (POLICY §3 compliance):** re-notify now keys off
+  the latest *failing-run* timestamp (`last_fail_ts`) instead of a 3-day wall-clock
+  cooldown, which had re-nudged authors about the **same** failing run once 3 days
+  passed. Removed the unused `NOTIFY_COOLDOWN_DAYS`.
