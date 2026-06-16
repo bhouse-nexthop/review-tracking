@@ -2,8 +2,8 @@
 
 **PRs awaiting our action**, sorted by recommendation — each links to its full brief (click → read → back → next). A PR drops off this doc once it's **approved/merged** or **handed back to the author** (changes/info/evidence requested, conflicting, COI-waiting); full state + history live in `actions.jsonl` + git. Recommendations fold in: does the diff match the description, complexity, **author trust** (§8.1), and **whether CI actually runs the test** (a green check on a skipped test proves nothing — see CI column). _Decision support; approval is the human reviewer's call._
 
-**Tally:** Get another opinion: 2 · Hold (your call): 1 · Blocked (COI): 1
-_(2026-06-16 — per your go-ahead, **approved + squash-merged six**: #24975, #25000, #24091, #21429, #23542, and #24217 (after neutralizing its `Fixes #24558` so the gating issue stays open). Backport labels flipped for the 202605/202511 requests; #21342 auto-closed as the now-filled test-gap; signoffs preserved, Co-authored-by/Copilot stripped. **Posted formal Request-changes** on #24591 (empty-except swallow) and #17940 (14 items; 3mo stale) → handed back to authors. Two tool/policy bugs fixed this session: (1) `ci_fail_notify` re-notify now keys off the failing-run timestamp, not a wall-clock cooldown (POLICY §3) — 6 stale repeat-nudges suppressed; (2) Rule 6 close-on-merge no longer closes no-keyword "mention" issues — it had wrongly closed #24217's gating issue #24558 + tracking #24215 on merge, both since **reopened**. Off-doc author/reviewer-ball: #24247, #24367, #20456, #24913, #24802, #21144, #24902-followups, #25012 (merged upstream).)_
+**Tally:** Get another opinion: 2 · Blocked (COI): 1
+_(2026-06-16 — per your go-ahead, **approved + squash-merged six**: #24975, #25000, #24091, #21429, #23542, and #24217 (after neutralizing its `Fixes #24558` so the gating issue stays open). Backport labels flipped for the 202605/202511 requests; #21342 auto-closed as the now-filled test-gap; signoffs preserved, Co-authored-by/Copilot stripped. **Posted formal Request-changes** on #24591 (empty-except swallow) and #17940 (14 items; 3mo stale) → handed back to authors. Two tool/policy bugs fixed this session: (1) `ci_fail_notify` re-notify now keys off the failing-run timestamp, not a wall-clock cooldown (POLICY §3) — 6 stale repeat-nudges suppressed; (2) Rule 6 close-on-merge no longer closes no-keyword "mention" issues — it had wrongly closed #24217's gating issue #24558 + tracking #24215 on merge, both since **reopened**. #24829 sent back to ytzur1 — the pdb dump doesn't isolate the new branch (`minigraph_acls` stores port names regardless of which branch ran); asked for the raw `AttachTo` string or a before/after, so it's now author-ball. Off-doc author/reviewer-ball: #24247, #24367, #20456, #24913, #24802, #21144, #24902-followups, #25012 (merged upstream).)_
 
 ## Recommendations
 
@@ -11,7 +11,6 @@ _(2026-06-16 — per your go-ahead, **approved + squash-merged six**: #24975, #2
 |----|-------|----------------|---------------|------------------|
 | [#24902](#pr-24902) | Handle pytest.fail.Exception in wait_until | wrideout-arista / High | Partial (shared helper) | **Get another opinion** — anders found 4 silent-no-op sites; awaiting @wangxin/@lolyu |
 | [#23283](#pr-23283) | Prevent cascading qos_sai failures after fixture error | darius-nexthop / Medium | Partial (off-gate) | **Get another opinion (COI)** — open ZhaohuiS concern; NextHop can't self-approve |
-| [#24829](#pr-24829) | Fix: add port name for acl interface parsing | ytzur1 / High | No (alias==name on gate) | **Hold (your call)** — evidence is a pdb dump, no independent approval |
 | [#23346](#pr-23346) | SONiC BMC Redfish API and D-Bus test plan | chinmoy-nexthop / Unproven | N-A (doc) | **Blocked (COI)** — NextHop test plan; needs non-NextHop approval |
 
 ---
@@ -57,22 +56,6 @@ _Ordered by recommendation, same as above._
     - **[ZhaohuiS — OPEN, blocking]** Skip-vs-fail semantics: justify why ERROR-on-seed + SKIP-on-cascade is acceptable for nightly triage (or use a non-skip signal downstream), and get the thread resolved.
     - **[StormLiangMS — administrative]** Stale CHANGES_REQUESTED never dismissed (still the active `reviewDecision`) — needs dismiss/re-review before merge.
     - **[StormLiangMS — nits]** Log cascade-skips at `info` not `warning`; emit the originating param-set key in the `pytest.skip` reason.
-
-[↑ back to recommendations](#deep-review-findings--sonic-netsonic-mgmt)
-
-<a id="pr-24829"></a>
-
-### [PR #24829](https://github.com/sonic-net/sonic-mgmt/pull/24829) — Fix: add port name for acl interface parsing
-- **Author / affiliation / trust:** ytzur1 / NVIDIA / High (merged PRs=22, top-company rank #2)
-- **➡ Recommendation:** **Hold — your call** — re-eval after our 2026-06-10 evidence-request. The change is additive and safe (a last-resort `elif member in ports` fallback after the existing branches), and ytzur1's response *literally* satisfies what we asked for (`mg_facts['minigraph_acls']` populated on a Mellanox-SN6600_LD-P128C2, where the bug lives). **But** the "evidence" is a pdb/debugger inspection dump, not a clean passing test run, and there is **no independent maintainer approval** — the only review on the PR is our own CHANGES_REQUESTED. Per your policy I'm not approving/merging on our review alone: flagging for your decision — either accept the pdb evidence as sufficient (additive/safe change), or ask ytzur1 for an actual passing run before approving.
-- **Type:** Bug fix (ACL interface / minigraph_acls parsing on aliased-port HWSKUs).
-- **Complexity:** Low — 1 file, +2/-0; adds a fallback branch to the ACL interface parsing.
-- **Description summary:** Adds port-name handling so ACL interface parsing also matches when a member is a port name (not an alias). References #22166.
-- **Existing reviews/comments:** bhouse-nexthop CHANGES_REQUESTED (06-10, evidence_request — CI doesn't exercise the new path since the KVM-gate HWSKU has alias==name); ytzur1 posted pdb output (06-14) showing `minigraph_acls` populated (DataAcl: Ethernet0…Ethernet200) on Mellanox-SN6600_LD-P128C2. No other reviewer.
-- **Matches description?:** Yes — the 2-line fallback matches the described intent.
-- **CI actually runs the test?:** **No** — on the KVM PR-gate the HWSKU has alias==name, so the existing `elif member in port_alias_to_name_map` branch already matches and the new `elif member in ports` fallback is never reached; it only fires on hardware where alias != name (e.g. `etp*` aliases) — exactly the case the bug affects.
-- **Linked issue(s):** #22166 (referenced in body).
-- **Reviewer notes:** Code is a safe additive fallback (our original assessment stands). The open question is purely evidentiary/process: pdb inspection vs a clean passing run, and no second reviewer — so a merge would rest on our review alone, which is why it's held for your decision. NVIDIA author → no COI gate.
 
 [↑ back to recommendations](#deep-review-findings--sonic-netsonic-mgmt)
 
