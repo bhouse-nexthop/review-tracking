@@ -815,3 +815,17 @@ of our actions it follows**, so the re-evaluation is actionable at a glance.
   are track-only and never closed; only keyword-fixed issues GitHub won't auto-close
   (cross-repo, or non-default branch) are manual-close candidates. Reopened
   #24558/#24215 and scrubbed the 5 spurious `issue_close` ledger entries.
+- **2026-07-10** — fourth sweep (first refresh since 06-16; 28 PRs) + a tickler
+  fix. **Tickler now respects the per-episode idempotency of Rules 1 & 5:**
+  `conflict_ping` and `ci_fail_notify` were removed from the tickle set. Re-pinging
+  a still-conflicting PR ("still has merge conflicts") is exactly the auto-re-ping
+  Rule 1 forbids — conflicts surface to the human via `escalate`, not another
+  author ping; and re-nudging a still-failing CI run duplicates the notice Rule 5
+  caps at one per failing episode. Left tickling only the *subjective asks the
+  author must act on* — `changes_requested` / `evidence_request` /
+  `opinion_request`. **Also added author-push awareness:** `tickler_pass` now
+  suppresses a reminder when the author pushed a commit after our last touch (not
+  just when they commented/reviewed) — `responded_since` reads only the
+  comment/review timeline, so a silent rebase/fix would otherwise get nagged
+  instead of re-evaluated (this correctly re-surfaced #17940, whose author had
+  pushed a fix with no comment). Net effect this sweep: tickler burst 15→2.
