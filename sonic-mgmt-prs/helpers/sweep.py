@@ -423,7 +423,7 @@ def fetch_prs():
     for n in nums:
         d = gh_json(["pr", "view", str(n), "--repo", REPO, "--json",
                      "number,title,author,mergeable,statusCheckRollup,reviews,"
-                     "headRefOid,isDraft,body,baseRefName,updatedAt,labels,comments"])
+                     "headRefOid,isDraft,body,baseRefName,updatedAt,labels,comments,commits"])
         detail.append(d)
     return detail
 
@@ -1020,8 +1020,13 @@ def close_issues_for_merged_pr(pr, apply):
 TICKLER_DAYS = 14
 HANDOFF = {"conflict_ping", "azp_run", "ci_fail_notify", "changes_requested",
            "evidence_request", "opinion_request", "escalate", "tickler"}
-TICKLE = {"conflict_ping", "ci_fail_notify", "changes_requested",
-          "evidence_request", "opinion_request"}   # asks we re-ping (not azp/escalate/tickler)
+# Only *subjective asks the author must act on* are tickled. conflict_ping and
+# ci_fail_notify are deliberately EXCLUDED: they carry per-episode idempotency
+# (Rule 1 "never auto-re-ping" a conflict — escalate to the human instead; Rule 5
+# "one notify per failing episode"), so a "still conflicting / still failing"
+# reminder would be exactly the duplicate nudge the policy forbids. Conflicts
+# surface to the human via `escalate`; CI failures re-notify only on a newer run.
+TICKLE = {"changes_requested", "evidence_request", "opinion_request"}
 
 TICKLER_MSG = {
     "conflict_ping": "Following up — this PR still has merge conflicts. Could you rebase and resolve them so we can review? Thanks!",
@@ -1125,6 +1130,24 @@ def responded_since(d, ts):
     return human_response_since(d, ts) is not None
 
 
+def author_pushed_since(d, ts):
+    """True if the PR head advanced (author pushed a commit) after `ts`. A push is
+    activity — the author is working the PR — so we must not tickle it as 'gone
+    quiet'. Comment/review detection (human_response_since) misses this because a
+    rebase/fix leaves no comment. Same imprecise-day rule as human_response_since
+    for legacy date-only ledger timestamps."""
+    if not ts:
+        return False
+    imprecise = ts.endswith("T00:00:00Z")
+    for c in (d.get("commits") or []):
+        when = c.get("committedDate", "") or ""
+        if not when:
+            continue
+        if (when[:10] > ts[:10]) if imprecise else (when > ts):
+            return True
+    return False
+
+
 def needs_our_action(d, ledger):
     """Findings-inclusion (§10): a PR belongs in review-findings.md iff we've
     deep-reviewed it, haven't approved it, and either we haven't acted since the
@@ -1157,8 +1180,8 @@ def tickler_pass(detail, ledger, apply):
         ask = max(asks, key=entry_ts)
         ticks = [e for e in acts if e["action"] == "tickler"]
         last_touch = max([entry_ts(ask)] + [entry_ts(t) for t in ticks])
-        if responded_since(d, last_touch):
-            continue                                    # author/reviewer responded -> re-evaluate, no tickle
+        if responded_since(d, last_touch) or author_pushed_since(d, last_touch):
+            continue                                    # author responded or pushed -> re-evaluate, no tickle
         age = (today_d - datetime.date.fromisoformat(last_touch[:10])).days
         if age < TICKLER_DAYS:
             continue
